@@ -9,7 +9,7 @@ exports.createKit = async (req, res) => {
       description,
       cost1,
       cost2,
-      cost3
+      cost3,
     });
     const savedKit = await newKit.save();
     res.json(savedKit);
@@ -26,5 +26,3 @@ exports.getKits = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
-
-

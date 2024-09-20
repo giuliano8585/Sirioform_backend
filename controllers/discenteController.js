@@ -13,7 +13,7 @@ const createDiscente = async (req, res) => {
       regione,
       email,
       telefono,
-      userId: req.user._id,
+      // userId: req.user._id,
     });
     await newDiscente.save();
     res.status(201).json(newDiscente);
