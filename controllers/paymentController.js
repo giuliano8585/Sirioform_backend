@@ -1,13 +1,14 @@
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-const Product = require('../models/Product');
+const Kit = require('../models/Kit');
+// const Product = require('../models/Product');
 
 const calculatePrice = (product, quantity) => {
   if (quantity <= 10) {
-    return product.price1;
+    return product.cost1;
   } else if (quantity <= 20) {
-    return product.price2;
+    return product.cost2;
   } else {
-    return product.price3;
+    return product.cost3;
   }
 };
 
@@ -15,7 +16,7 @@ const createPaymentSession = async (req, res) => {
   const { productIds, quantities } = req.body;
 
   try {
-    const products = await Product.find({ _id: { $in: productIds } });
+    const products = await Kit.find({ _id: { $in: productIds } });
 
     const amount = products.reduce((total, product, index) => {
       const quantity = quantities[index];

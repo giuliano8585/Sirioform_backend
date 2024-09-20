@@ -127,8 +127,8 @@ const getAllOrders = async (req, res) => {
     if (req.user?.role == 'admin') {
       console.log('User is admin, fetching all orders...');
       const orders = await Order.find().populate(
-        'userId orderItems.productId',
-        'firstName lastName title'
+        'orderItems.productId',
+        // 'firstName lastName title'
       );
       console.log('Orders fetched with populate:', orders);
       res.json(orders);
