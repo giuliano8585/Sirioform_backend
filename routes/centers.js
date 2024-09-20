@@ -33,7 +33,7 @@ router.get('/', getAllCenters);
 router.get('/:id', getCenterById);
 
 // Route per assegnare un sanitario a un centro (richiede autenticazione)
-router.post('/assign-sanitario', auth, assignSanitario);
+router.post('/assign-sanitario', assignSanitario);
 
 // Route per ottenere i sanitari assegnati a un centro specifico
 router.get('/:id/sanitarios', getAssignedSanitarios);
@@ -45,7 +45,7 @@ router.post('/remove-sanitario', auth, removeSanitario);
 router.get('/:centerId/sanitarios',auth, getCenterSanitarios);
 
 // Route per assegnare un istruttore a un centro (richiede autenticazione)
-router.post('/assign-instructor', auth, assignInstructor);
+router.post('/assign-instructor', assignInstructor);
 
 // Route per rimuovere un istruttore da un centro (richiede autenticazione)
 router.post('/remove-instructor', auth, removeInstructor);
