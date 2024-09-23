@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 const orderSchema = new Schema({
-  userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+  // userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   orderItems: [
     {
       productId: { type: Schema.Types.ObjectId, ref: 'Product', required: true },
@@ -18,7 +18,7 @@ const orderSchema = new Schema({
 orderSchema.methods.getOrderDetails = function() {
   console.log("Getting order details for order ID:", this._id); // Log
   return {
-    userId: this.userId,
+   // userId: this.userId,
     orderItems: this.orderItems,
     totalPrice: this.totalPrice,
     createdAt: this.createdAt

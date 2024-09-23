@@ -1,3 +1,4 @@
+const Kit = require('../models/Kit');
 const Order = require('../models/Order');
 const Product = require('../models/Product');
 
@@ -12,10 +13,11 @@ const createOrderController = async (req, res) => {
   const { productIds, quantities } = req.body;
 
   try {
-    if (!req.user || !req.user._id) {
-      console.log('User information missing during order creation');
-      return res.status(400).json({ message: 'User information is missing.' });
-    }
+ //   if (!req.user || !req.user._id) {
+ //     console.log('User information missing during order creation');
+ //     return res.status(400).json({ message: 'User information is missing.' });
+//  }
+//currently its not working becouse we dont have any user schema in database
 
     const orders = await Order.find();
     let maxProgressiveNumber = 0;
@@ -41,7 +43,7 @@ const createOrderController = async (req, res) => {
       console.log(
         `Processing productId: ${productIds[i]} with quantity: ${quantities[i]}`
       ); // Log
-      const product = await Product.findById(productIds[i]);
+      const product = await Kit.findById(productIds[i]);
       if (!product) {
         console.log(`Product not found: ${productIds[i]}`); // Log
         return res
@@ -51,11 +53,11 @@ const createOrderController = async (req, res) => {
 
       let price;
       if (quantities[i] <= 10) {
-        price = product.price1;
+        price = product.cost1;
       } else if (quantities[i] <= 20) {
-        price = product.price2;
+        price = product.cost2;
       } else {
-        price = product.price3;
+        price = product.cost3;
       }
       console.log(`Price determined for productId ${productIds[i]}: ${price}`);
 
