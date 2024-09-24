@@ -6,6 +6,7 @@ const sendEmail = require('../utils/emailService');
 const axios = require('axios');
 const Sanitario = require('../models/Sanitario');
 const Instructor = require('../models/Instructor'); // Importa il modello dell'istruttore
+const User = require('../models/User');
 
 exports.registerCenter = async (req, res) => {
   const {
@@ -37,7 +38,7 @@ exports.registerCenter = async (req, res) => {
   }
 
   try {
-    const existingCenter = await Center.findOne({ username });
+    const existingCenter = await User.findOne({ username });
     if (existingCenter) {
       return res.status(400).json({ error: 'Username already exists' });
     }
@@ -45,7 +46,7 @@ exports.registerCenter = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    const newCenter = new Center({
+    const newCenter = new User({
       name,
       piva,
       address,
@@ -56,6 +57,7 @@ exports.registerCenter = async (req, res) => {
       username,
       password: hashedPassword,
       isActive: false,
+      role:'center',
       sanitarios: [],
       instructors: [], // Inizializza l'array degli istruttori
     });
@@ -77,7 +79,7 @@ exports.registerCenter = async (req, res) => {
 
 exports.getUnapprovedCenters = async (req, res) => {
   try {
-    const centers = await Center.find({ isActive: false });
+    const centers = await User.find({ isActive: false });
     res.json(centers);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -86,7 +88,7 @@ exports.getUnapprovedCenters = async (req, res) => {
 
 exports.approveCenter = async (req, res) => {
   try {
-    const center = await Center.findByIdAndUpdate(
+    const center = await User.findByIdAndUpdate(
       req.params.id,
       { isActive: true },
       { new: true }
@@ -107,7 +109,7 @@ exports.approveCenter = async (req, res) => {
 
 exports.getAllCenters = async (req, res) => {
   try {
-    const centers = await Center.find({ isActive: true });
+    const centers = await User.find({ isActive: true,role:'center' });
     res.json(centers);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -116,7 +118,7 @@ exports.getAllCenters = async (req, res) => {
 
 exports.getCenterById = async (req, res) => {
   try {
-    const center = await Center.findById(req.params.id);
+    const center = await User.findById(req.params.id);
     if (!center) {
       return res.status(404).json({ error: 'Center not found' });
     }
@@ -130,7 +132,7 @@ exports.getCenterById = async (req, res) => {
 exports.assignSanitario = async (req, res) => {
   const { centerId, sanitarioId } = req.body;
   try {
-    const center = await Center.findById(centerId);
+    const center = await User.findById(centerId);
     if (!center) {
       return res.status(404).json({ error: 'Center not found' });
     }
@@ -152,7 +154,7 @@ exports.assignSanitario = async (req, res) => {
 // Ottiene i sanitari assegnati a un centro
 exports.getAssignedSanitarios = async (req, res) => {
   try {
-    const center = await Center.findById(req.params.id).populate('sanitarios');
+    const center = await User.findById(req.params.id).populate('sanitarios');
     if (!center) {
       return res.status(404).json({ error: 'Center not found' });
     }
@@ -166,7 +168,7 @@ exports.getAssignedSanitarios = async (req, res) => {
 exports.removeSanitario = async (req, res) => {
   const { centerId, sanitarioId } = req.body;
   try {
-    const center = await Center.findById(centerId);
+    const center = await User.findById(centerId);
     if (!center) {
       return res.status(404).json({ error: 'Center not found' });
     }
@@ -183,7 +185,7 @@ exports.removeSanitario = async (req, res) => {
 exports.getCenterSanitarios = async (req, res) => {
   try {
     const centerId = req.params.centerId;
-    const center = await Center.findById(centerId).populate('sanitarios');
+    const center = await User.findById(centerId).populate('sanitarios');
     if (!center) {
       return res.status(404).json({ error: 'Center not found' });
     }
@@ -199,7 +201,7 @@ exports.getCenterSanitarios = async (req, res) => {
 exports.assignInstructor = async (req, res) => {
   try {
     const { centerId, instructorId } = req.body;
-    const center = await Center.findById(centerId);
+    const center = await User.findById(centerId);
     if (!center) {
       return res.status(404).json({ error: 'Center not found' });
     }
@@ -221,7 +223,7 @@ exports.assignInstructor = async (req, res) => {
 // Ottiene gli istruttori assegnati a un centro
 exports.getAssignedInstructors = async (req, res) => {
   try {
-    const center = await Center.findById(req.params.id).populate('instructors');
+    const center = await User.findById(req.params.id).populate('instructors');
     if (!center) {
       return res.status(404).json({ error: 'Center not found' });
     }
@@ -235,7 +237,7 @@ exports.getAssignedInstructors = async (req, res) => {
 exports.removeInstructor = async (req, res) => {
   const { centerId, instructorId } = req.body;
   try {
-    const center = await Center.findById(centerId);
+    const center = await User.findById(centerId);
     if (!center) {
       return res.status(404).json({ error: 'Center not found' });
     }
@@ -251,7 +253,7 @@ exports.removeInstructor = async (req, res) => {
 exports.getCenterInstructors = async (req, res) => {
   try {
     const centerId = req.params.centerId;
-    const center = await Center.findById(centerId).populate('Instructor');
+    const center = await User.findById(centerId).populate('Instructor');
     if (!center) {
       return res.status(404).json({ error: 'Center not found' });
     }

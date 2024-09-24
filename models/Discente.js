@@ -9,7 +9,7 @@ const discenteSchema = new mongoose.Schema({
   regione: { type: String, required: true },
   email: { type: String, required: true },
   telefono: { type: String, required: true },
-  // userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
 }, {
   timestamps: true,
 });

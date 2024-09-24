@@ -9,15 +9,13 @@ const extractProgressiveNumber = (progressiveNumber) => {
 };
 
 const createOrderController = async (req, res) => {
-  console.log('POST /api/orders - Order creation started'); // Log
   const { productIds, quantities } = req.body;
 
   try {
- //   if (!req.user || !req.user._id) {
- //     console.log('User information missing during order creation');
- //     return res.status(400).json({ message: 'User information is missing.' });
-//  }
-//currently its not working becouse we dont have any user schema in database
+   if (!req.user || !req.user._id) {
+     console.log('User information missing during order creation');
+     return res.status(400).json({ message: 'User information is missing.' });
+ }
 
     const orders = await Order.find();
     let maxProgressiveNumber = 0;

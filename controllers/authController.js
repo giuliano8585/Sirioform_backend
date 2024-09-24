@@ -3,26 +3,27 @@ const Instructor = require('../models/Instructor');
 const Admin = require('../models/Admin');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const User = require('../models/User');
 
 exports.login = async (req, res) => {
   const { username, password, role } = req.body;
 
   try {
-    let user;
-    if (role === 'center') {
-      user = await Center.findOne({ username });
-    } else if (role === 'instructor') {
-      user = await Instructor.findOne({ username });
-    } else if (role === 'admin') {
-      user = await Admin.findOne({ username });
-    }
+    let user = await User.findOne({ username });
+    // if (role === 'center') {
+    //   user = await User.findOne({ username });
+    // } else if (role === 'instructor') {
+    //   user = await User.findOne({ username });
+    // } else if (role === 'admin') {
+    //   user = await User.findOne({ username });
+    // }
 
     if (!user) {
       return res.status(400).json({ error: 'User not found' });
     }
 
     // Check if the user is active
-    if (role !== 'admin' && !user.isActive) {
+    if (user?.role !== 'admin' && !user.isActive) {
       return res.status(403).json({ error: 'Account not activated. Please contact the administrator.' });
     }
 
@@ -34,7 +35,7 @@ exports.login = async (req, res) => {
     const payload = {
       user: {
         id: user.id,
-        role: role
+        role: user?.role
       }
     };
 
@@ -49,7 +50,7 @@ exports.login = async (req, res) => {
 
 exports.getLoggedInInstructor = async (req, res) => {
   try {
-    const instructor = await Instructor.findById(req.user.id).select('-password');
+    const instructor = await User.findById(req.user.id).select('-password');
     if (!instructor) {
       return res.status(404).json({ error: 'Instructor not found' });
     }
@@ -61,7 +62,7 @@ exports.getLoggedInInstructor = async (req, res) => {
 
 exports.getLoggedInCenter = async (req, res) => {
   try {
-    const center = await Center.findById(req.user.id).select('-password');
+    const center = await User.findById(req.user.id).select('-password');
     if (!center) {
       return res.status(404).json({ error: 'Center not found' });
     }
