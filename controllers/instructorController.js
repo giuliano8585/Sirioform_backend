@@ -5,6 +5,7 @@ const jwt = require('jsonwebtoken');
 const sendEmail = require('../utils/emailService');
 const axios = require('axios');
 const Sanitario = require('../models/Sanitario'); // Importa il modello del sanitario
+const User = require('../models/User');
 
 exports.registerInstructor = async (req, res) => {
   const { firstName, lastName, fiscalCode, brevetNumber, qualifications, piva, address, city, region, email, phone, username, password, repeatPassword, recaptchaToken } = req.body;
@@ -22,7 +23,7 @@ exports.registerInstructor = async (req, res) => {
   }
 
   try {
-    const existingInstructor = await Instructor.findOne({ username });
+    const existingInstructor = await User.findOne({ username });
     if (existingInstructor) {
       return res.status(400).json({ error: 'Username already exists' });
     }
@@ -30,7 +31,7 @@ exports.registerInstructor = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    const newInstructor = new Instructor({
+    const newInstructor = new User({
       firstName,
       lastName,
       fiscalCode,
@@ -45,6 +46,7 @@ exports.registerInstructor = async (req, res) => {
       username,
       password: hashedPassword,
       isActive: false,
+      role:'instructor',
       sanitarios: [] // Inizializza l'array dei sanitari
     });
 
@@ -61,7 +63,7 @@ exports.registerInstructor = async (req, res) => {
 
 exports.getUnapprovedInstructors = async (req, res) => {
   try {
-    const instructors = await Instructor.find({ isActive: false });
+    const instructors = await User.find({ isActive: false });
     res.json(instructors);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -70,7 +72,7 @@ exports.getUnapprovedInstructors = async (req, res) => {
 
 exports.approveInstructor = async (req, res) => {
   try {
-    const instructor = await Instructor.findByIdAndUpdate(req.params.id, { isActive: true }, { new: true });
+    const instructor = await User.findByIdAndUpdate(req.params.id, { isActive: true }, { new: true });
 
     // Invia email di conferma
     sendEmail(instructor.email, 'Account Attivato', 'Il tuo account è stato approvato e attivato. Puoi ora accedere al sistema.');
@@ -83,7 +85,7 @@ exports.approveInstructor = async (req, res) => {
 
 exports.getAllInstructors = async (req, res) => {
   try {
-    const instructors = await Instructor.find({ isActive: true });
+    const instructors = await User.find({ isActive: true,role:'instructor' });
     res.json(instructors);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -92,7 +94,7 @@ exports.getAllInstructors = async (req, res) => {
 
 exports.getInstructorById = async (req, res) => {
   try {
-    const instructor = await Instructor.findById(req.params.id).populate('sanitarios');
+    const instructor = await User.findById(req.params.id).populate('sanitarios');
     if (!instructor) {
       return res.status(404).json({ error: 'Instructor not found' });
     }
@@ -106,7 +108,7 @@ exports.getInstructorById = async (req, res) => {
 exports.assignSanitario = async (req, res) => {
   const { instructorId, sanitarioId } = req.body;
   try {
-    const instructor = await Instructor.findById(instructorId);
+    const instructor = await User.findById(instructorId);
     if (!instructor) {
       return res.status(404).json({ error: 'Instructor not found' });
     }
@@ -126,7 +128,7 @@ exports.assignSanitario = async (req, res) => {
 // Ottiene i sanitari assegnati a un istruttore
 exports.getAssignedSanitarios = async (req, res) => {
   try {
-    const instructor = await Instructor.findById(req.params.id).populate('sanitarios');
+    const instructor = await User.findById(req.params.id).populate('sanitarios');
     if (!instructor) {
       return res.status(404).json({ error: 'Instructor not found' });
     }
@@ -140,7 +142,7 @@ exports.getAssignedSanitarios = async (req, res) => {
 exports.removeSanitario = async (req, res) => {
   const { instructorId, sanitarioId } = req.body;
   try {
-    const instructor = await Instructor.findById(instructorId);
+    const instructor = await User.findById(instructorId);
     if (!instructor) {
       return res.status(404).json({ error: 'Instructor not found' });
     }
@@ -156,7 +158,7 @@ exports.removeSanitario = async (req, res) => {
 exports.getInstructorSanitarios = async (req, res) => {
   try {
     const instructorId = req.params.id;
-    const instructor = await Instructor.findById(instructorId).populate('sanitarios');
+    const instructor = await User.findById(instructorId).populate('sanitarios');
     if (!instructor) {
       return res.status(404).json({ error: 'Instructor not found' });
     }
