@@ -21,27 +21,25 @@ const createPaymentSession = async (req, res) => {
     const amount = products.reduce((total, product, index) => {
       const quantity = quantities[index];
       const price = calculatePrice(product, quantity);
-      return total + (price * quantity);
+      return total + price * quantity;
     }, 0);
 
-      console.log('amount: ', amount*100);
+    console.log('amount: ', amount * 100);
     // Create a PaymentIntent
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: Math.round(amount * 100), 
+      amount: Math.round(amount * 100) + 1000,
       currency: 'eur',
       payment_method_types: ['card'],
     });
 
     res.json({ clientSecret: paymentIntent.client_secret });
   } catch (error) {
-    console.error("Error creating PaymentIntent:", error);
-    res.status(500).send("An error occurred, unable to create payment session");
+    console.error('Error creating PaymentIntent:', error);
+    res.status(500).send('An error occurred, unable to create payment session');
   }
 };
 
 module.exports = { createPaymentSession };
-
-
 
 // const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 // const Product = require('../models/Product'); // Assicurati di importare il modello Product
