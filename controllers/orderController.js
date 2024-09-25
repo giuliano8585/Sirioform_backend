@@ -12,10 +12,10 @@ const createOrderController = async (req, res) => {
   const { productIds, quantities } = req.body;
 
   try {
-   if (!req.user || !req.user._id) {
-     console.log('User information missing during order creation');
-     return res.status(400).json({ message: 'User information is missing.' });
- }
+//   if (!req.user || !req.user._id) {
+//     console.log('User information missing during order creation');
+//     return res.status(400).json({ message: 'User information is missing.' });
+//}
 
     const orders = await Order.find();
     let maxProgressiveNumber = 0;
@@ -79,7 +79,7 @@ const createOrderController = async (req, res) => {
     }
 
     const newOrder = new Order({
-      userId: req.user._id,
+      //userId: req.user._id,
       orderItems: orderItems,
       totalPrice: totalPrice,
     });
