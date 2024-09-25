@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 
 const KitSchema = new mongoose.Schema({
+  profileImage: String,
   code: { type: String, required: true },
   type: { type: String, required: true },
   description: { type: String, required: true },

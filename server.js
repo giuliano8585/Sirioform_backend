@@ -8,6 +8,7 @@ require('dotenv').config();
 
 connectDB();
 const app = express();
+app.use('/uploads', express.static('uploads'));
 app.use(cors());
 app.use(bodyParser.json());
 
@@ -19,9 +20,7 @@ app.use('/api', require('./routes/protected'));
 app.use('/api/kits', require('./routes/kits'));
 app.use('/api/sanitarios', require('./routes/sanitarios'));
 
-app.use('/api/products', require('./routes/productRoutes'));
 app.use('/api/orders', require('./routes/orderRoutes'));
-// app.use('/api/admin/orders', require('./routes/orderRoutes'));
 app.use('/api/payment', require('./routes/paymentRoutes'));
 app.use('/api/discenti', require('./routes/discenteRoutes'));
 app.use('/api/corsi', require('./routes/courseRoutes'));

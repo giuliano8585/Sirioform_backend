@@ -10,6 +10,7 @@ exports.createKit = async (req, res) => {
       cost1,
       cost2,
       cost3,
+      profileImage: req.files['profileImage']? req.files['profileImage'][0].path: '',
     });
     const savedKit = await newKit.save();
     res.json(savedKit);

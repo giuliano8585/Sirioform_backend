@@ -1,21 +1,20 @@
 const Kit = require('../models/Kit');
 const Order = require('../models/Order');
-const Product = require('../models/Product');
 
-// create order controller
 const extractProgressiveNumber = (progressiveNumber) => {
   const parts = progressiveNumber.split('-');
   return parseInt(parts[1], 10);
 };
 
 const createOrderController = async (req, res) => {
+  console.log('req users: ', req.user);
   const { productIds, quantities } = req.body;
 
   try {
-//   if (!req.user || !req.user._id) {
-//     console.log('User information missing during order creation');
-//     return res.status(400).json({ message: 'User information is missing.' });
-//}
+  if (!req.user || !req.user.id) {
+    console.log('User information missing during order creation');
+    return res.status(400).json({ message: 'User information is missing.' });
+}
 
     const orders = await Order.find();
     let maxProgressiveNumber = 0;
@@ -30,23 +29,14 @@ const createOrderController = async (req, res) => {
         });
       });
     });
-
-    console.log(`Max progressive number found: ${maxProgressiveNumber}`);
-
     const orderItems = [];
     let totalPrice = 0;
-    const currentYear = new Date().getFullYear().toString().slice(-2); // Get last two digits of the year
+    const currentYear = new Date().getFullYear().toString().slice(-2); 
 
     for (let i = 0; i < productIds.length; i++) {
-      console.log(
-        `Processing productId: ${productIds[i]} with quantity: ${quantities[i]}`
-      ); // Log
       const product = await Kit.findById(productIds[i]);
       if (!product) {
-        console.log(`Product not found: ${productIds[i]}`); // Log
-        return res
-          .status(404)
-          .json({ message: `Product with id ${productIds[i]} not found` });
+        return res.status(404).json({ message: `Product with id ${productIds[i]} not found` });
       }
 
       let price;
@@ -57,9 +47,7 @@ const createOrderController = async (req, res) => {
       } else {
         price = product.cost3;
       }
-      console.log(`Price determined for productId ${productIds[i]}: ${price}`);
 
-      // Generate progressive numbers
       const progressiveNumbers = [];
       for (let j = 0; j < quantities[i]; j++) {
         maxProgressiveNumber++;
@@ -74,24 +62,20 @@ const createOrderController = async (req, res) => {
         price: price,
         progressiveNumbers: progressiveNumbers,
       });
-
       totalPrice += price * quantities[i];
     }
 
     const newOrder = new Order({
-      //userId: req.user._id,
+      userId: req.user.id,
       orderItems: orderItems,
       totalPrice: totalPrice,
     });
 
     const savedOrder = await newOrder.save();
-    console.log('Order successfully created:', savedOrder); // Log
+    console.log('Order successfully created:', savedOrder); 
     res.status(201).json(savedOrder);
   } catch (err) {
-    console.error('Order creation error:', err);
-    res
-      .status(500)
-      .json({ message: 'Server error, order could not be created' });
+    res.status(500).json({ message: 'Server error, order could not be created' });
   }
 };
 
@@ -127,8 +111,8 @@ const getAllOrders = async (req, res) => {
     if (req.user?.role == 'admin') {
       console.log('User is admin, fetching all orders...');
       const orders = await Order.find().populate(
-        'orderItems.productId',
-        // 'firstName lastName title'
+        'userId orderItems.productId',
+        'firstName lastName type'
       );
       console.log('Orders fetched with populate:', orders);
       res.json(orders);
@@ -151,9 +135,9 @@ const getAllOrders = async (req, res) => {
 const getUserOrders = async (req, res) => {
   console.log('GET /api/orders - Fetching user orders'); // Log
   try {
-    const orders = await Order.find({ userId: req.user._id }).populate(
+    const orders = await Order.find({ userId: req.user.id }).populate(
       'orderItems.productId',
-      'title'
+      'type'
     );
     console.log('User orders fetched:', orders);
     res.json(orders);
@@ -188,7 +172,7 @@ const getProdottiAcquistati = async (req, res) => {
         } else {
           acc.push({
             _id: item.productId._id,
-            title: item.productId.title,
+            title: item.productId.type,
             quantity: item.quantity,
             progressiveNumbers: item.progressiveNumbers || [],
           });
