@@ -11,10 +11,10 @@ const createOrderController = async (req, res) => {
   const { productIds, quantities } = req.body;
 
   try {
-  if (!req.user || !req.user.id) {
-    console.log('User information missing during order creation');
-    return res.status(400).json({ message: 'User information is missing.' });
-}
+    if (!req.user || !req.user.id) {
+      console.log('User information missing during order creation');
+      return res.status(400).json({ message: 'User information is missing.' });
+    }
 
     const orders = await Order.find();
     let maxProgressiveNumber = 0;
@@ -31,12 +31,14 @@ const createOrderController = async (req, res) => {
     });
     const orderItems = [];
     let totalPrice = 0;
-    const currentYear = new Date().getFullYear().toString().slice(-2); 
+    const currentYear = new Date().getFullYear().toString().slice(-2);
 
     for (let i = 0; i < productIds.length; i++) {
       const product = await Kit.findById(productIds[i]);
       if (!product) {
-        return res.status(404).json({ message: `Product with id ${productIds[i]} not found` });
+        return res
+          .status(404)
+          .json({ message: `Product with id ${productIds[i]} not found` });
       }
 
       let price;
@@ -72,10 +74,12 @@ const createOrderController = async (req, res) => {
     });
 
     const savedOrder = await newOrder.save();
-    console.log('Order successfully created:', savedOrder); 
+    console.log('Order successfully created:', savedOrder);
     res.status(201).json(savedOrder);
   } catch (err) {
-    res.status(500).json({ message: 'Server error, order could not be created' });
+    res
+      .status(500)
+      .json({ message: 'Server error, order could not be created' });
   }
 };
 
@@ -149,16 +153,9 @@ const getUserOrders = async (req, res) => {
   }
 };
 
-// Funzione per ottenere i prodotti acquistati dall'utente
 const getProdottiAcquistati = async (req, res) => {
   try {
-    // Trova tutti gli ordini dell'utente
-    const orders = await Order.find({ userId: req.user._id }).populate(
-      'orderItems.productId'
-    );
-    console.log('acquistati orders : ', orders);
-
-    // Estrai i prodotti acquistati dall'utente con il totale delle quantità
+    const orders = await Order.find({ userId: req.user.id }).populate('orderItems.productId');
     const prodottiAcquistati = orders.reduce((acc, order) => {
       order.orderItems.forEach((item) => {
         const prodotto = acc.find((prod) =>
@@ -180,13 +177,9 @@ const getProdottiAcquistati = async (req, res) => {
       });
       return acc;
     }, []);
-
     res.status(200).json(prodottiAcquistati);
   } catch (err) {
-    console.error('Errore durante il recupero dei prodotti acquistati:', err);
-    res
-      .status(500)
-      .json({ message: 'Errore durante il recupero dei prodotti acquistati' });
+    res.status(500).json({ message: 'Errore durante il recupero dei prodotti acquistati' });
   }
 };
 
