@@ -1,21 +1,20 @@
-const mongoose = require('mongoose');
-const Instructor = require('../models/Instructor');
 const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
 const sendEmail = require('../utils/emailService');
 const axios = require('axios');
-const Sanitario = require('../models/Sanitario'); // Importa il modello del sanitario
 const User = require('../models/User');
 
 exports.registerInstructor = async (req, res) => {
-  const { firstName, lastName, fiscalCode, brevetNumber, qualifications, piva, address, city, region, email, phone, username, password, repeatPassword, recaptchaToken } = req.body;
+  const { 
+    firstName, lastName, fiscalCode, brevetNumber, qualifications, // qualifications should be an array of objects
+    piva, address, city, region, email, phone, username, password, repeatPassword, recaptchaToken 
+  } = req.body;
 
   if (password !== repeatPassword) {
     return res.status(400).json({ error: 'Passwords do not match' });
   }
 
   // Verifica reCAPTCHA
-  const secretKey = process.env.RECAPTCHA_SECRET_KEY; // Inserisci la tua reCAPTCHA Secret Key qui o nel file .env
+  const secretKey = process.env.RECAPTCHA_SECRET_KEY;
   const response = await axios.post(`https://www.google.com/recaptcha/api/siteverify?secret=${secretKey}&response=${recaptchaToken}`);
 
   if (!response.data.success) {
@@ -31,12 +30,17 @@ exports.registerInstructor = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
+    const formattedQualifications = qualifications.map(q => ({
+      name: q.name,
+      expirationDate: new Date(q.expirationDate)
+    }));
+
     const newInstructor = new User({
       firstName,
       lastName,
       fiscalCode,
       brevetNumber,
-      qualifications,
+      qualifications: formattedQualifications,
       piva,
       address,
       city,
@@ -46,8 +50,8 @@ exports.registerInstructor = async (req, res) => {
       username,
       password: hashedPassword,
       isActive: false,
-      role:'instructor',
-      sanitarios: [] // Inizializza l'array dei sanitari
+      role: 'instructor',
+      sanitarios: []
     });
 
     await newInstructor.save();
@@ -60,6 +64,7 @@ exports.registerInstructor = async (req, res) => {
     res.status(400).json({ error: err.message });
   }
 };
+
 
 exports.getUnapprovedInstructors = async (req, res) => {
   try {
