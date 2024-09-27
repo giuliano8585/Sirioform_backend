@@ -24,7 +24,11 @@ exports.login = async (req, res) => {
 
     // Check if the user is active
     if (user?.role !== 'admin' && !user.isActive) {
-      return res.status(403).json({ error: 'Account not activated. Please contact the administrator.' });
+      return res
+        .status(403)
+        .json({
+          error: 'Account not activated. Please contact the administrator.',
+        });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
@@ -35,16 +39,21 @@ exports.login = async (req, res) => {
     const payload = {
       user: {
         id: user.id,
-        role: user?.role
-      }
+        role: user?.role,
+      },
     };
 
-    jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' }, (err, token) => {
-      if (err) throw err;
-      res.json({ token });
-    });
+    jwt.sign(
+      payload,
+      process.env.JWT_SECRET,
+      { expiresIn: '1h' },
+      (err, token) => {
+        if (err) throw err;
+        res.json({ token });
+      }
+    );
   } catch (err) {
-    res.status(500).json({ error: err.message ,msg:"some errors"});
+    res.status(500).json({ error: err.message, msg: 'some errors' });
   }
 };
 
@@ -62,7 +71,9 @@ exports.getLoggedInInstructor = async (req, res) => {
 
 exports.getLoggedInCenter = async (req, res) => {
   try {
-    const center = await User.findById(req.user.id).select('-password');
+    const center = await User.findById(req.user.id)
+      .populate('sanitarios')
+      .select('-password');
     if (!center) {
       return res.status(404).json({ error: 'Center not found' });
     }
