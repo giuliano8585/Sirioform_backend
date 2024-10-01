@@ -12,7 +12,7 @@ const createCourse = async (req, res) => {
       istruttore,
       direttoreCorso,
       giornate,
-      userId: req.user._id,
+      userId: req.user.id,
     });
 
     const createdCourse = await newCourse.save();
@@ -26,7 +26,7 @@ const createCourse = async (req, res) => {
 // Funzione per ottenere tutti i corsi dell'utente
 const getCoursesByUser = async (req, res) => {
   try {
-    const courses = await Course.find({ userId: req.user._id });
+    const courses = await Course.find({ userId: req.user.id });
     res.status(200).json(courses);
   } catch (error) {
     res.status(500).json({ message: 'Errore durante il recupero dei corsi' });

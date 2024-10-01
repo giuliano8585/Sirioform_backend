@@ -72,7 +72,7 @@ exports.getLoggedInInstructor = async (req, res) => {
 exports.getLoggedInCenter = async (req, res) => {
   try {
     const center = await User.findById(req.user.id)
-      .populate('sanitarios')
+      .populate('sanitarios instructors')
       .select('-password');
     if (!center) {
       return res.status(404).json({ error: 'Center not found' });
