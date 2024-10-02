@@ -1,6 +1,7 @@
 const express = require('express');
-const { createCourse, getCoursesByUser } = require('../controllers/courseController');
+const { createCourse, getCoursesByUser, getAllCourses } = require('../controllers/courseController');
 const auth = require('../middleware/auth');
+const isAdmin = require('../middleware/isAdmin');
 
 const router = express.Router();
 
@@ -8,6 +9,8 @@ const router = express.Router();
 router.post('/', auth, createCourse);
 
 // Rotta per ottenere i corsi dell'utente
-router.get('/', auth, getCoursesByUser);
+router.get('/user-courses', auth, getCoursesByUser);
+
+router.get('/', auth,isAdmin, getAllCourses);
 
 module.exports = router;

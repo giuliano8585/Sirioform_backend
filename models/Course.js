@@ -12,8 +12,8 @@ const courseSchema = new mongoose.Schema({
   città: { type: String, required: true },   
   via: { type: String, required: true },
   numeroDiscenti: { type: Number, required: true },
-  istruttore: { type: String, required: true }, 
-  direttoreCorso: { type: String, required: true }, 
+  istruttore: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }],   
+  direttoreCorso:  [{ type: mongoose.Schema.Types.ObjectId, ref: 'Sanitario', required: true }], 
   giornate: [giornataSchema], 
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }, 
 }, {
