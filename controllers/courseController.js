@@ -1,22 +1,90 @@
+const Order = require('../models/Order');
+const Kit = require('../models/Kit');
 const Course = require('../models/Course');
+const { createNotification } = require('../utils/notificationService');
+const User = require('../models/User');
 
 // Funzione per creare un nuovo corso
 const createCourse = async (req, res) => {
-  console.log('req body: ', req.body);
-  const { tipologia, città, via, numeroDiscenti, istruttori, direttoriCorso, giornate } = req.body;
+  console.log('req body: ', req.user);
+  const {
+    tipologia,
+    città,
+    via,
+    numeroDiscenti,
+    istruttori,
+    direttoriCorso,
+    giornate,
+  } = req.body;
+
   try {
+    // Find the user's orders that contain the kit matching the course's tipologia
+    const userOrders = await Order.find({
+      userId: req.user.id,
+      'orderItems.productId': tipologia,
+    });
+    if (!userOrders.length) {
+      return res.status(400).json({ message: 'No kits found for the user' });
+    }
+    let totalAvailableQuantity = 0;
+    let selectedOrderItem = null;
+
+    userOrders.forEach((order) => {
+      order.orderItems.forEach((item) => {
+        if (item.productId.toString() === tipologia) {
+          totalAvailableQuantity += item.quantity;
+          selectedOrderItem = item;
+        }
+      });
+    });
+
+    // Check if the available quantity is enough
+    if (numeroDiscenti > totalAvailableQuantity) {
+      return res
+        .status(400)
+        .json({ message: 'Not enough kits available to create the course' });
+    }
+
+    // Create the course
     const newCourse = new Course({
       tipologia,
       città,
       via,
       numeroDiscenti,
-      istruttore:istruttori,
-      direttoreCorso:direttoriCorso,
+      istruttore: istruttori,
+      direttoreCorso: direttoriCorso,
       giornate,
       userId: req.user.id,
     });
 
     const createdCourse = await newCourse.save();
+
+    await createNotification({
+      message: `has created a new course.`,
+      senderId: req.user.id,
+      isAdmin: true,
+    });
+
+    // Update the order kit quantity
+    let remainingQuantity = numeroDiscenti;
+
+    for (const order of userOrders) {
+      for (const item of order.orderItems) {
+        if (item.productId.toString() === tipologia && remainingQuantity > 0) {
+          const usedQuantity = Math.min(item.quantity, remainingQuantity);
+
+          if (item.totalQuantity == null) {
+            item.totalQuantity = item.quantity;
+          }
+          item.quantity -= usedQuantity;
+          remainingQuantity -= usedQuantity;
+
+          // Save the updated order with reduced quantity
+          await order.save();
+        }
+      }
+    }
+
     res.status(201).json(createdCourse);
   } catch (error) {
     console.error('Errore durante la creazione del corso:', error);
@@ -27,7 +95,7 @@ const createCourse = async (req, res) => {
 // Funzione per ottenere tutti i corsi dell'utente
 const getCoursesByUser = async (req, res) => {
   try {
-    const courses = await Course.find({ userId: req.user.id })?.populate('direttoreCorso istruttore');
+    const courses = await Course.find({ userId: req.user.id }).populate('direttoreCorso').populate('istruttore');
     res.status(200).json(courses);
   } catch (error) {
     res.status(500).json({ message: 'Errore durante il recupero dei corsi' });
@@ -36,11 +104,39 @@ const getCoursesByUser = async (req, res) => {
 
 const getAllCourses = async (req, res) => {
   try {
-    const courses = await Course.find();
+    const courses = await Course.find().populate('direttoreCorso').populate('istruttore');
     res.status(200).json(courses);
   } catch (error) {
     res.status(500).json({ message: 'Errore durante il recupero dei corsi' });
   }
 };
 
-module.exports = { createCourse, getCoursesByUser,getAllCourses };
+const updateCourseStatus = async (req, res) => {
+  const { courseId } = req.params;
+  const { status } = req.body;
+  try {
+    if (!['active', 'unactive'].includes(status)) {
+      return res.status(400).json({ message: 'Invalid status value' });
+    }
+    const updatedCourse = await Course.findByIdAndUpdate(
+      courseId,
+      { status },
+      { new: true }
+    );
+    if (!updatedCourse) {
+      return res.status(404).json({ message: 'Course not found' });
+    }
+
+    res.status(200).json(updatedCourse);
+  } catch (error) {
+    console.error('Error updating course status:', error);
+    res.status(500).json({ message: 'Error updating course status' });
+  }
+};
+
+module.exports = {
+  createCourse,
+  getCoursesByUser,
+  getAllCourses,
+  updateCourseStatus,
+};

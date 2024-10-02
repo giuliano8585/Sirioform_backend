@@ -61,6 +61,7 @@ const createOrderController = async (req, res) => {
       orderItems.push({
         productId: productIds[i],
         quantity: quantities[i],
+        totalQuantity: quantities[i],
         price: price,
         progressiveNumbers: progressiveNumbers,
       });
@@ -163,6 +164,7 @@ const getProdottiAcquistati = async (req, res) => {
         );
         if (prodotto) {
           prodotto.quantity += item.quantity;
+          prodotto.totalQuantity += item.totalQuantity;
           prodotto.progressiveNumbers = prodotto.progressiveNumbers.concat(
             item.progressiveNumbers
           );
@@ -171,6 +173,7 @@ const getProdottiAcquistati = async (req, res) => {
             _id: item.productId._id,
             title: item.productId.type,
             quantity: item.quantity,
+            totalQuantity: item.totalQuantity||0,
             progressiveNumbers: item.progressiveNumbers || [],
           });
         }

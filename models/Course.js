@@ -7,6 +7,24 @@ const giornataSchema = new mongoose.Schema({
   oraFine: { type: String, required: true },
 });
 
+const progressiveCounterSchema = new mongoose.Schema({
+  counter: { type: Number, default: 0 }
+});
+const ProgressiveCounter = mongoose.model('ProgressiveCounter', progressiveCounterSchema);
+const generateProgressiveNumber = async (course) => {
+  const datePart = course.giornate[0]?.dataInizio.toISOString().split('T')[0];
+  let counterDoc = await ProgressiveCounter.findOne();
+  if (!counterDoc) {
+    counterDoc = new ProgressiveCounter({ counter: 1 });
+  } else {
+    counterDoc.counter += 1;
+  }
+  await counterDoc.save();
+  const counterStr = counterDoc.counter.toString().padStart(5, '0');
+  return `${course.tipologia}-${datePart}-${counterStr}`;
+};
+
+
 const courseSchema = new mongoose.Schema({
   tipologia: { type: String, required: true },
   città: { type: String, required: true },   
@@ -16,8 +34,17 @@ const courseSchema = new mongoose.Schema({
   direttoreCorso:  [{ type: mongoose.Schema.Types.ObjectId, ref: 'Sanitario', required: true }], 
   giornate: [giornataSchema], 
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }, 
+  progressiveNumber: { type: String }, 
+  status: { type: String, enum: ['active', 'unactive'], default: 'unactive' },
 }, {
   timestamps: true 
+});
+
+courseSchema.pre('save', async function (next) {
+  if (!this.progressiveNumber) {
+    this.progressiveNumber = await generateProgressiveNumber(this);
+  }
+  next();
 });
 
 module.exports = mongoose.model('Course', courseSchema);
