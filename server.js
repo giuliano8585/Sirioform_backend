@@ -24,6 +24,7 @@ app.use('/api/orders', require('./routes/orderRoutes'));
 app.use('/api/payment', require('./routes/paymentRoutes'));
 app.use('/api/discenti', require('./routes/discenteRoutes'));
 app.use('/api/corsi', require('./routes/courseRoutes'));
+app.use('/api/notifications', require('./routes/notificationRoutes'));
 
 const PORT = process.env.PORT || 5000;
 

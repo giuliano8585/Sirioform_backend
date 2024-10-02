@@ -6,6 +6,7 @@ const orderSchema = new Schema({
   orderItems: [
     {
       productId: { type: Schema.Types.ObjectId, ref: 'Kit', required: true },
+      totalQuantity: { type: Number, required: true },
       quantity: { type: Number, required: true },
       price: { type: Number, required: true },
       progressiveNumbers: { type: [String], required: true }
