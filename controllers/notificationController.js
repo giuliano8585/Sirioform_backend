@@ -1,13 +1,17 @@
 const Notification = require('../models/Notification');
 
-// Get all notifications for the logged-in user
 const getNotifications = async (req, res) => {
   try {
-    const notifications = await Notification.find({
-        receiverId: req.user._id,
-    }).sort({ createdAt: -1 }).populate('senderId');
-    
-    console.log('notifications: ', notifications);
+
+    let filter = { $or: [{ receiverId: req.user.id }, { forAllUsers: true }] };
+    if (req.user.role=='admin') {
+      filter.$or.push({ isAdmin: true });
+    }
+
+    const notifications = await Notification.find(filter)
+      .sort({ createdAt: -1 })
+      .populate('senderId');
+
     res.status(200).json(notifications);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching notifications' });
@@ -37,3 +41,26 @@ module.exports = {
   getNotifications,
   markNotificationAsRead,
 };
+
+
+  // // Example: send a notification to the admin
+  // await createNotification({
+  //   message: `has created a new course.`,
+  //   senderId: req.user.id,
+  //   receiverId: adminId,  // admin's userId
+  //   isAdmin: true,
+  // });
+
+  // // Example: send a notification to all users
+  // await createNotification({
+  //   message: `A new course is available.`,
+  //   senderId: req.user.id,
+  //   forAllUsers: true,  // notify all users
+  // });
+
+  // // Example: send a notification to the instructor of the course
+  // await createNotification({
+  //   message: `The status of your course has changed.`,
+  //   senderId: req.user.id,
+  //   receiverId: instructorId,  // instructor's userId
+  // });

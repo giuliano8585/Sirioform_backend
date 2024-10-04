@@ -15,10 +15,14 @@ const {
   removeInstructor,
   getAssignedInstructors,
   getCenterInstructors,
+  updateCenter,
 } = require('../controllers/centerController');
 
 // Route per la registrazione di un nuovo centro
 router.post('/register', registerCenter);
+// update route
+
+router.patch('/update/:centerId', updateCenter);
 
 // Route per ottenere i centri non approvati (richiede autenticazione)
 router.get('/unapproved', auth, getUnapprovedCenters);
@@ -42,7 +46,7 @@ router.get('/:id/sanitarios', getAssignedSanitarios);
 router.post('/remove-sanitario', auth, removeSanitario);
 
 // Route per ottenere i sanitari del centro loggato (richiede autenticazione)
-router.get('/:centerId/sanitarios',auth, getCenterSanitarios);
+router.get('/:centerId/sanitarios', auth, getCenterSanitarios);
 
 // Route per assegnare un istruttore a un centro (richiede autenticazione)
 router.post('/assign-instructor', assignInstructor);
@@ -54,6 +58,6 @@ router.post('/remove-instructor', auth, removeInstructor);
 router.get('/:id/instructors', getAssignedInstructors);
 
 // Route per ottenere gli istruttori del centro loggato (richiede autenticazione)
-router.get('/:centerId/instructors',auth, getCenterInstructors);
+router.get('/:centerId/instructors', auth, getCenterInstructors);
 
 module.exports = router;

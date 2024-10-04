@@ -77,6 +77,34 @@ exports.registerCenter = async (req, res) => {
   }
 };
 
+exports.updateCenter = async (req, res) => {
+  const { centerId } = req.params;
+  const { piva, address, city, region, email, phone } = req.body;  // Fields that can be updated
+
+  try {
+    let center = await User.findById(centerId);
+    console.log('center: ', center);
+    if (!center || center.role !== 'center') {
+      return res.status(404).json({ error: 'Center not found.' });
+    }
+
+    // Update only the allowed fields
+    center.piva = piva || center.piva;
+    center.address = address || center.address;
+    center.city = city || center.city;
+    center.region = region || center.region;
+    center.email = email || center.email;
+    center.phone = phone || center.phone;
+
+    // Save the updated center
+    await center.save();
+
+    res.status(200).json({ message: 'Center updated successfully.', center });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+};
+
 exports.getUnapprovedCenters = async (req, res) => {
   try {
     const centers = await User.find({ isActive: false });

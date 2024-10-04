@@ -9,11 +9,13 @@ const {
   assignSanitario,
   getAssignedSanitarios,
   removeSanitario,
-  getInstructorSanitarios 
+  getInstructorSanitarios, 
+  updateInstructor
 } = require('../controllers/instructorController');
 const router = express.Router();
 
 router.post('/register', registerInstructor);
+router.patch('/update/:id', updateInstructor);
 router.get('/unapproved', getUnapprovedInstructors);
 router.put('/approve/:id', approveInstructor);
 router.get('/', getAllInstructors);

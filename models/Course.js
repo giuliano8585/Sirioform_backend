@@ -26,7 +26,7 @@ const generateProgressiveNumber = async (course) => {
 
 
 const courseSchema = new mongoose.Schema({
-  tipologia: { type: String, required: true },
+  tipologia: { type: mongoose.Schema.Types.ObjectId, ref: 'Kit', required: true },
   città: { type: String, required: true },   
   via: { type: String, required: true },
   numeroDiscenti: { type: Number, required: true },
