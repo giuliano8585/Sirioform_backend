@@ -75,6 +75,31 @@ exports.getUnapprovedInstructors = async (req, res) => {
   }
 };
 
+exports.updateInstructor = async (req, res) => {
+  const { id } = req.params;
+  const updateData = req.body;
+
+  try {
+    const instructor = await User.findById(id);
+    if (!instructor) {
+      return res.status(404).json({ error: 'Instructor not found' });
+    }
+
+    // Prevent updates to name, surname, fiscal code, and brevet number
+    delete updateData.firstName;
+    delete updateData.lastName;
+    delete updateData.fiscalCode;
+    delete updateData.brevetNumber;
+
+    const updatedInstructor = await User.findByIdAndUpdate(id, updateData, { new: true });
+
+    res.status(200).json(updatedInstructor);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error during update' });
+  }
+};
+
 exports.approveInstructor = async (req, res) => {
   try {
     const instructor = await User.findByIdAndUpdate(req.params.id, { isActive: true }, { new: true });

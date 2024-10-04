@@ -1,11 +1,13 @@
-const Notification = require('../models/Notification');
+const Notification = require("../models/Notification");
 
-const createNotification = async ({ message, senderId, isAdmin = false }) => {
+const createNotification = async ({ message, senderId, receiverId = null, isAdmin = false, forAllUsers = false }) => {
   try {
     const notification = new Notification({
       message,
       senderId,
+      receiverId,
       isAdmin,
+      forAllUsers,
     });
 
     await notification.save();

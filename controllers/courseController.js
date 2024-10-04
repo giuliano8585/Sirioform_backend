@@ -95,7 +95,9 @@ const createCourse = async (req, res) => {
 // Funzione per ottenere tutti i corsi dell'utente
 const getCoursesByUser = async (req, res) => {
   try {
-    const courses = await Course.find({ userId: req.user.id }).populate('direttoreCorso').populate('istruttore');
+    const courses = await Course.find({ userId: req.user.id })
+      .populate('direttoreCorso')
+      .populate('istruttore');
     res.status(200).json(courses);
   } catch (error) {
     res.status(500).json({ message: 'Errore durante il recupero dei corsi' });
@@ -104,7 +106,11 @@ const getCoursesByUser = async (req, res) => {
 
 const getAllCourses = async (req, res) => {
   try {
-    const courses = await Course.find().populate('direttoreCorso').populate('istruttore');
+    const courses = await Course.find()
+      .populate('direttoreCorso')
+      .populate('tipologia')
+      .populate('userId')
+      .populate('istruttore');
     res.status(200).json(courses);
   } catch (error) {
     res.status(500).json({ message: 'Errore durante il recupero dei corsi' });
@@ -123,10 +129,15 @@ const updateCourseStatus = async (req, res) => {
       { status },
       { new: true }
     );
+    console.log('updatedCourse: ', updatedCourse);
     if (!updatedCourse) {
       return res.status(404).json({ message: 'Course not found' });
     }
-
+    await createNotification({
+      message: `The status of your course has changed.`,
+      senderId: req.user.id,
+      receiverId: updatedCourse?.userId,
+    });
     res.status(200).json(updatedCourse);
   } catch (error) {
     console.error('Error updating course status:', error);
