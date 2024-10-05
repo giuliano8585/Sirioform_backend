@@ -2,6 +2,7 @@ const bcrypt = require('bcryptjs');
 const sendEmail = require('../utils/emailService');
 const axios = require('axios');
 const User = require('../models/User');
+const { createNotification } = require('../utils/notificationService');
 
 exports.registerInstructor = async (req, res) => {
   const { 
@@ -58,6 +59,13 @@ exports.registerInstructor = async (req, res) => {
 
     // Invia email di conferma
     sendEmail(email, 'Registrazione Istruttore', 'Grazie per esserti registrato! Il tuo account è in attesa di approvazione.');
+
+    await createNotification({
+      message: `New Instructor Registered`,
+      senderId: null,
+      category:'instructorAccount',
+      isAdmin: true,
+    });
 
     res.status(201).json(newInstructor);
   } catch (err) {

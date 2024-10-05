@@ -1,9 +1,10 @@
 const Notification = require("../models/Notification");
 
-const createNotification = async ({ message, senderId, receiverId = null, isAdmin = false, forAllUsers = false }) => {
+const createNotification = async ({ message,category, senderId, receiverId = null, isAdmin = false, forAllUsers = false }) => {
   try {
     const notification = new Notification({
       message,
+      category,
       senderId,
       receiverId,
       isAdmin,
