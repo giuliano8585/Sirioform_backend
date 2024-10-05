@@ -7,6 +7,7 @@ const axios = require('axios');
 const Sanitario = require('../models/Sanitario');
 const Instructor = require('../models/Instructor'); // Importa il modello dell'istruttore
 const User = require('../models/User');
+const { createNotification } = require('../utils/notificationService');
 
 exports.registerCenter = async (req, res) => {
   const {
@@ -71,6 +72,12 @@ exports.registerCenter = async (req, res) => {
       'Grazie per esserti registrato! Il tuo account è in attesa di approvazione.'
     );
 
+    await createNotification({
+      message: `New Center Registered`,
+      senderId: null,
+      category:'centerAccount',
+      isAdmin: true,
+    });
     res.status(201).json(newCenter);
   } catch (err) {
     res.status(400).json({ error: err.message });

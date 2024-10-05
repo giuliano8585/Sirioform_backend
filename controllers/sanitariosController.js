@@ -31,3 +31,35 @@ exports.getAllSanitarios = async (req, res) => {
   }
 };
 
+exports.updateSanitario = async (req, res) => {
+  const { id } = req.params;
+  const updates = req.body;
+
+  try {
+    const updatedSanitario = await Sanitario.findByIdAndUpdate(id, updates, { new: true });
+
+    if (!updatedSanitario) {
+      return res.status(404).json({ error: 'Sanitario not found' });
+    }
+
+    res.json(updatedSanitario);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+};
+
+exports.deleteSanitario = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const deletedSanitario = await Sanitario.findByIdAndDelete(id);
+
+    if (!deletedSanitario) {
+      return res.status(404).json({ error: 'Sanitario not found' });
+    }
+
+    res.json({ message: 'Sanitario deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};

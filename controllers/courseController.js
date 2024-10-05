@@ -62,6 +62,7 @@ const createCourse = async (req, res) => {
     await createNotification({
       message: `has created a new course.`,
       senderId: req.user.id,
+      category:'general',
       isAdmin: true,
     });
 
@@ -136,6 +137,7 @@ const updateCourseStatus = async (req, res) => {
     await createNotification({
       message: `The status of your course has changed.`,
       senderId: req.user.id,
+      category:'general',
       receiverId: updatedCourse?.userId,
     });
     res.status(200).json(updatedCourse);
