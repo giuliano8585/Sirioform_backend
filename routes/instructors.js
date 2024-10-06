@@ -1,5 +1,6 @@
 const express = require('express');
 const auth = require('../middleware/auth');
+const isAdmin = require('../middleware/isAdmin');
 const {
   registerInstructor,
   getUnapprovedInstructors,
@@ -9,13 +10,13 @@ const {
   assignSanitario,
   getAssignedSanitarios,
   removeSanitario,
-  getInstructorSanitarios, 
-  updateInstructor
+  getInstructorSanitarios,
+  updateInstructor,
 } = require('../controllers/instructorController');
 const router = express.Router();
 
 router.post('/register', registerInstructor);
-router.patch('/update/:id', updateInstructor);
+router.patch('/update/:id',auth,updateInstructor);
 router.get('/unapproved', getUnapprovedInstructors);
 router.put('/approve/:id', approveInstructor);
 router.get('/', getAllInstructors);

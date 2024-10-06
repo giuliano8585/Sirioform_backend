@@ -7,6 +7,7 @@ const notificationSchema = new mongoose.Schema({
   isAdmin: { type: Boolean, default: false }, 
   isRead: { type: Boolean, default: false }, 
   category:{type: String},
+  userName:{type: String},
   forAllUsers: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now },
 }, {
