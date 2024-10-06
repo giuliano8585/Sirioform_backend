@@ -26,13 +26,22 @@ const createDiscente = async (req, res) => {
 };
 
 // Funzione per ottenere tutti i discenti
+const getUserDiscenti = async (req, res) => {
+  try {
+    const discenti = await Discente.find({ userId: req.user.id }).populate('userId'); // Trova tutti i discenti associati all'utente
+    res.status(200).json(discenti);
+  } catch (error) {
+    res.status(500).json({ message: 'Errore durante il recupero dei discenti' });
+  }
+};
 const getAllDiscenti = async (req, res) => {
   try {
-    const discenti = await Discente.find({ userId: req.user.id }); // Trova tutti i discenti associati all'utente
+    const discenti = await Discente.find().populate('userId'); // Trova tutti i discenti associati all'utente
+    console.log('discenti: ', discenti);
     res.status(200).json(discenti);
   } catch (error) {
     res.status(500).json({ message: 'Errore durante il recupero dei discenti' });
   }
 };
 
-module.exports = { createDiscente, getAllDiscenti };  // Esporta entrambe le funzioni
+module.exports = { createDiscente, getAllDiscenti,getUserDiscenti };  // Esporta entrambe le funzioni

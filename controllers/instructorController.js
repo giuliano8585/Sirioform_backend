@@ -6,7 +6,7 @@ const { createNotification } = require('../utils/notificationService');
 
 exports.registerInstructor = async (req, res) => {
   const { 
-    firstName, lastName, fiscalCode, brevetNumber, qualifications, // qualifications should be an array of objects
+    firstName, lastName, fiscalCode, brevetNumber, qualifications,
     piva, address, city, region, email, phone, username, password, repeatPassword, recaptchaToken 
   } = req.body;
 
@@ -64,10 +64,41 @@ exports.registerInstructor = async (req, res) => {
       message: `New Instructor Registered`,
       senderId: null,
       category:'instructorAccount',
+      userName:newInstructor?.firstName+" "+newInstructor?.lastName,
       isAdmin: true,
     });
 
     res.status(201).json(newInstructor);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+};
+
+
+exports.updateInstructor = async (req, res) => {
+  const  userId  = req.params.id;
+  console.log('userId: ', userId);
+  const role = req.user?.role; 
+
+  const updates = req.body;
+
+  if (role === 'center') {
+    const restrictedFields = ['firstName', 'lastName', 'brevetNumber', 'fiscalCode'];
+        restrictedFields.forEach(field => {
+      if (updates.hasOwnProperty(field)) {
+        delete updates[field];
+      }
+    });
+  }
+
+  try {
+    const user = await User.findByIdAndUpdate(userId, updates, { new: true, runValidators: true });
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.status(200).json(user);
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
@@ -83,30 +114,7 @@ exports.getUnapprovedInstructors = async (req, res) => {
   }
 };
 
-exports.updateInstructor = async (req, res) => {
-  const { id } = req.params;
-  const updateData = req.body;
 
-  try {
-    const instructor = await User.findById(id);
-    if (!instructor) {
-      return res.status(404).json({ error: 'Instructor not found' });
-    }
-
-    // Prevent updates to name, surname, fiscal code, and brevet number
-    delete updateData.firstName;
-    delete updateData.lastName;
-    delete updateData.fiscalCode;
-    delete updateData.brevetNumber;
-
-    const updatedInstructor = await User.findByIdAndUpdate(id, updateData, { new: true });
-
-    res.status(200).json(updatedInstructor);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error during update' });
-  }
-};
 
 exports.approveInstructor = async (req, res) => {
   try {

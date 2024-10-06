@@ -1,11 +1,6 @@
-const mongoose = require('mongoose');
-const Center = require('../models/Center');
 const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
 const sendEmail = require('../utils/emailService');
 const axios = require('axios');
-const Sanitario = require('../models/Sanitario');
-const Instructor = require('../models/Instructor'); // Importa il modello dell'istruttore
 const User = require('../models/User');
 const { createNotification } = require('../utils/notificationService');
 
@@ -76,6 +71,7 @@ exports.registerCenter = async (req, res) => {
       message: `New Center Registered`,
       senderId: null,
       category:'centerAccount',
+      userName:newCenter.name,
       isAdmin: true,
     });
     res.status(201).json(newCenter);
@@ -86,24 +82,36 @@ exports.registerCenter = async (req, res) => {
 
 exports.updateCenter = async (req, res) => {
   const { centerId } = req.params;
-  const { piva, address, city, region, email, phone } = req.body;  // Fields that can be updated
+  const { name, piva, address, city, region, email, phone, username, isActive, role, sanitarios, instructors } = req.body;
 
   try {
     let center = await User.findById(centerId);
-    console.log('center: ', center);
     if (!center || center.role !== 'center') {
       return res.status(404).json({ error: 'Center not found.' });
     }
-
-    // Update only the allowed fields
-    center.piva = piva || center.piva;
-    center.address = address || center.address;
-    center.city = city || center.city;
-    center.region = region || center.region;
-    center.email = email || center.email;
-    center.phone = phone || center.phone;
-
-    // Save the updated center
+    if (req.user.role === 'admin') {
+      center.name = name || center.name;
+      center.piva = piva || center.piva;
+      center.address = address || center.address;
+      center.city = city || center.city;
+      center.region = region || center.region;
+      center.email = email || center.email;
+      center.phone = phone || center.phone;
+      center.username = username || center.username;
+      center.isActive = isActive !== undefined ? isActive : center.isActive;
+      center.role = role || center.role;
+      center.sanitarios = sanitarios || center.sanitarios;
+      center.instructors = instructors || center.instructors;
+    } else if (req.user.role === 'center') {
+      center.piva = piva || center.piva;
+      center.address = address || center.address;
+      center.city = city || center.city;
+      center.region = region || center.region;
+      center.email = email || center.email;
+      center.phone = phone || center.phone;
+    } else {
+      return res.status(403).json({ error: 'Unauthorized.' });
+    }
     await center.save();
 
     res.status(200).json({ message: 'Center updated successfully.', center });
@@ -111,6 +119,7 @@ exports.updateCenter = async (req, res) => {
     res.status(400).json({ error: err.message });
   }
 };
+
 
 exports.getUnapprovedCenters = async (req, res) => {
   try {
