@@ -22,7 +22,8 @@ const createCourse = async (req, res) => {
     const userOrders = await Order.find({
       userId: req.user.id,
       'orderItems.productId': tipologia,
-    });
+    }).populate('userId');
+    console.log('userOrders: ', userOrders);
     if (!userOrders.length) {
       return res.status(400).json({ message: 'No kits found for the user' });
     }
@@ -60,7 +61,7 @@ const createCourse = async (req, res) => {
     const createdCourse = await newCourse.save();
 
     await createNotification({
-      message: `has created a new course.`,
+      message: `${req.user.role =='center'? userOrders[0]?.userId?.name: (userOrders[0]?.userId?.firstName+" "+userOrders[0]?.userId?.lastName)} has created a new course.`,
       senderId: req.user.id,
       category: 'general',
       isAdmin: true,
