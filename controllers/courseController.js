@@ -62,7 +62,7 @@ const createCourse = async (req, res) => {
     await createNotification({
       message: `has created a new course.`,
       senderId: req.user.id,
-      category:'general',
+      category: 'general',
       isAdmin: true,
     });
 
@@ -98,7 +98,8 @@ const getCoursesByUser = async (req, res) => {
   try {
     const courses = await Course.find({ userId: req.user.id })
       .populate('direttoreCorso')
-      .populate('istruttore');
+      .populate('istruttore')
+      .populate('tipologia');
     res.status(200).json(courses);
   } catch (error) {
     res.status(500).json({ message: 'Errore durante il recupero dei corsi' });
@@ -135,9 +136,9 @@ const updateCourseStatus = async (req, res) => {
       return res.status(404).json({ message: 'Course not found' });
     }
     await createNotification({
-      message: `The status of your course has changed.`,
+      message: `The status of your course ${updatedCourse?.città} has changed.`,
       senderId: req.user.id,
-      category:'general',
+      category: 'general',
       receiverId: updatedCourse?.userId,
     });
     res.status(200).json(updatedCourse);

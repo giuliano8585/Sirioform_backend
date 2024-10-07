@@ -37,9 +37,31 @@ const markNotificationAsRead = async (req, res) => {
   }
 };
 
+const deleteNotification = async (req, res) => {
+  try {
+    const notificationId = req.params.id;
+    const notification = await Notification.findById(notificationId);
+
+    if (!notification) {
+      return res.status(404).json({ message: 'Notification not found' });
+    }
+
+    if (notification.receiverId.toString() !== req.user.id && req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'You are not authorized to delete this notification' });
+    }
+
+    await notification.deleteOne({_id:notificationId});
+    res.status(200).json({ message: 'Notification deleted successfully' });
+  } catch (error) {
+    console.log('error: ', error);
+    res.status(500).json({ message: 'Error deleting notification' });
+  }
+};
+
 module.exports = {
   getNotifications,
   markNotificationAsRead,
+  deleteNotification,
 };
 
 
