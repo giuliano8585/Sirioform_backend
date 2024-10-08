@@ -153,7 +153,7 @@ exports.approveCenter = async (req, res) => {
 
 exports.getAllCenters = async (req, res) => {
   try {
-    const centers = await User.find({ isActive: true,role:'center' });
+    const centers = await User.find({ isActive: true,role:'center' }).populate('sanitarios');
     res.json(centers);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -162,7 +162,7 @@ exports.getAllCenters = async (req, res) => {
 
 exports.getCenterById = async (req, res) => {
   try {
-    const center = await User.findById(req.params.id);
+    const center = await User.findById(req.params.id).populate('sanitarios');
     if (!center) {
       return res.status(404).json({ error: 'Center not found' });
     }

@@ -61,7 +61,13 @@ const createCourse = async (req, res) => {
     const createdCourse = await newCourse.save();
 
     await createNotification({
-      message: `${req.user.role =='center'? userOrders[0]?.userId?.name: (userOrders[0]?.userId?.firstName+" "+userOrders[0]?.userId?.lastName)} has created a new course.`,
+      message: `${
+        req.user.role == 'center'
+          ? userOrders[0]?.userId?.name
+          : userOrders[0]?.userId?.firstName +
+            ' ' +
+            userOrders[0]?.userId?.lastName
+      } has created a new course.`,
       senderId: req.user.id,
       category: 'general',
       isAdmin: true,
@@ -131,13 +137,13 @@ const updateCourseStatus = async (req, res) => {
       courseId,
       { status },
       { new: true }
-    );
+    ).populate('tipologia');
     console.log('updatedCourse: ', updatedCourse);
     if (!updatedCourse) {
       return res.status(404).json({ message: 'Course not found' });
     }
     await createNotification({
-      message: `The status of your course ${updatedCourse?.città} has changed.`,
+      message: `The status of your course ${updatedCourse?.tipologia?.type} has changed.`,
       senderId: req.user.id,
       category: 'general',
       receiverId: updatedCourse?.userId,
