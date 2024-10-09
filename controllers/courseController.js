@@ -3,6 +3,7 @@ const Kit = require('../models/Kit');
 const Course = require('../models/Course');
 const { createNotification } = require('../utils/notificationService');
 const User = require('../models/User');
+const { default: mongoose } = require('mongoose');
 
 // Funzione per creare un nuovo corso
 const createCourse = async (req, res) => {
@@ -106,7 +107,22 @@ const getCoursesByUser = async (req, res) => {
     const courses = await Course.find({ userId: req.user.id })
       .populate('direttoreCorso')
       .populate('istruttore')
-      .populate('tipologia');
+      .populate('tipologia')
+      .populate('discente');
+    res.status(200).json(courses);
+  } catch (error) {
+    res.status(500).json({ message: 'Errore durante il recupero dei corsi' });
+  }
+};
+
+const getCourseById = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const courses = await Course.findOne({ _id: id })
+      .populate('direttoreCorso')
+      .populate('istruttore')
+      .populate('tipologia')
+      .populate('discente');
     res.status(200).json(courses);
   } catch (error) {
     res.status(500).json({ message: 'Errore durante il recupero dei corsi' });
@@ -155,9 +171,44 @@ const updateCourseStatus = async (req, res) => {
   }
 };
 
+const assignDescente = async (req, res) => {
+  try {
+    const { courseId, discenteId } = req.body;
+    if (!courseId || !discenteId) {
+      return res
+        .status(400)
+        .json({ error: 'Course ID and Discente ID are required' });
+    }
+    if (
+      !mongoose.Types.ObjectId.isValid(courseId) ||
+      !mongoose.Types.ObjectId.isValid(discenteId)
+    ) {
+      return res.status(400).json({ error: 'Invalid courseId or discenteId' });
+    }
+
+    const course = await Course.findById(courseId);
+    if (!course) {
+      return res.status(404).json({ error: 'Course not found' });
+    }
+    if (course.discente.includes(discenteId)) {
+      return res
+        .status(400)
+        .json({ error: 'Discente is already assigned to this course' });
+    }
+    course.discente.push(discenteId);
+    await course.save();
+    res.status(200).json({ message: 'Discente successfully assigned', course });
+  } catch (err) {
+    console.error('Server error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+};
+
 module.exports = {
   createCourse,
   getCoursesByUser,
   getAllCourses,
   updateCourseStatus,
+  assignDescente,
+  getCourseById,
 };
