@@ -34,6 +34,7 @@ const courseSchema = new mongoose.Schema({
   direttoreCorso:  [{ type: mongoose.Schema.Types.ObjectId, ref: 'Sanitario', required: true }], 
   giornate: [giornataSchema], 
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }, 
+  discente: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Discente' }], 
   progressiveNumber: { type: String }, 
   status: { type: String, enum: ['active', 'unactive'], default: 'unactive' },
 }, {

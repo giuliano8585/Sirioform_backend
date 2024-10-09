@@ -51,7 +51,7 @@ const updateDiscente = async (req, res) => {
 const getUserDiscentiById = async (req, res) => {
   const { id } = req.params;
   try {
-    const discenti = await Discente.findOne({ _id:id }).populate('userId'); // Trova tutti i discenti associati all'utente
+    const discenti = await Discente.findOne({ _id:id }).populate('userId');
     res.status(200).json(discenti);
   } catch (error) {
     res.status(500).json({ message: 'Errore durante il recupero dei discenti' });
@@ -59,7 +59,7 @@ const getUserDiscentiById = async (req, res) => {
 };
 const getUserDiscenti = async (req, res) => {
   try {
-    const discenti = await Discente.find({ userId: req.user.id }).populate('userId'); // Trova tutti i discenti associati all'utente
+    const discenti = await Discente.find({ userId: req.user.id }).populate('userId','-password'); 
     res.status(200).json(discenti);
   } catch (error) {
     res.status(500).json({ message: 'Errore durante il recupero dei discenti' });
