@@ -7,7 +7,6 @@ const { default: mongoose } = require('mongoose');
 
 // Funzione per creare un nuovo corso
 const createCourse = async (req, res) => {
-  console.log('req body: ', req.user);
   const {
     tipologia,
     città,
@@ -16,6 +15,7 @@ const createCourse = async (req, res) => {
     istruttori,
     direttoriCorso,
     giornate,
+    isRefreshCourse,
   } = req.body;
 
   try {
@@ -57,6 +57,7 @@ const createCourse = async (req, res) => {
       direttoreCorso: direttoriCorso,
       giornate,
       userId: req.user.id,
+      isRefreshCourse,
     });
 
     const createdCourse = await newCourse.save();
