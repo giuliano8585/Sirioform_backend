@@ -86,7 +86,6 @@ const createOrderController = async (req, res) => {
 
 // Funzione per creare un nuovo ordine
 const createOrder = async (req, res) => {
-  console.log('createOrder function invoked'); // Log
   const { userId, orderItems } = req.body;
 
   console.log('Order data received:', { userId, orderItems }); // Log dei dati ricevuti
@@ -117,7 +116,7 @@ const getAllOrders = async (req, res) => {
       console.log('User is admin, fetching all orders...');
       const orders = await Order.find().populate(
         'userId orderItems.productId',
-        'firstName lastName role name type code'
+        'firstName lastName role name type code isRefreshCourse'
       ).populate('orderItems');
       console.log('Orders fetched with populate:', orders);
       res.json(orders);
@@ -161,10 +160,11 @@ const getProdottiAcquistati = async (req, res) => {
       order.orderItems.forEach((item) => {
         const prodotto = acc.find((prod) =>
           prod._id.equals(item.productId._id)
-        );
+      );
         if (prodotto) {
           prodotto.quantity += item.quantity;
           prodotto.totalQuantity += item.totalQuantity;
+          prodotto.isRefreshKit;
           prodotto.progressiveNumbers = prodotto.progressiveNumbers.concat(
             item.progressiveNumbers
           );
@@ -173,6 +173,7 @@ const getProdottiAcquistati = async (req, res) => {
             _id: item.productId._id,
             title: item.productId.type,
             quantity: item.quantity,
+            isRefreshKit:item.productId.isRefreshKit,
             totalQuantity: item.totalQuantity||0,
             progressiveNumbers: item.progressiveNumbers || [],
           });
