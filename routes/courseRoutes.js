@@ -6,6 +6,9 @@ const {
   updateCourseStatus,
   assignDescente,
   getCourseById,
+  removeDiscente,
+  updateCourse,
+  deleteCourse,
 } = require('../controllers/courseController');
 const auth = require('../middleware/auth');
 const isAdmin = require('../middleware/isAdmin');
@@ -25,5 +28,13 @@ router.get('/', auth, isAdmin, getAllCourses);
 router.patch('/courses/:courseId/status', auth, isAdmin, updateCourseStatus);
 
 router.patch('/assign-discente', assignDescente);
+
+router.patch('/remove-discente', removeDiscente);
+
+router.patch('/courses/:courseId', updateCourse);
+
+router.delete('/courses/:courseId', deleteCourse);
+
+
 
 module.exports = router;
