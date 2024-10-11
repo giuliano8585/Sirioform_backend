@@ -33,11 +33,11 @@ const courseSchema = new mongoose.Schema({
   istruttore: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }],   
   direttoreCorso:  [{ type: mongoose.Schema.Types.ObjectId, ref: 'Sanitario', required: true }], 
   giornate: [giornataSchema], 
-  isRefreshCourse:{type:Boolean,required:true},
+  isRefreshCourse:{type:Boolean},
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }, 
   discente: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Discente' }], 
   progressiveNumber: { type: String }, 
-  status: { type: String, enum: ['active', 'unactive'], default: 'unactive' },
+  status: { type: String, enum: ['active', 'unactive','update'], default: 'unactive' },
 }, {
   timestamps: true 
 });

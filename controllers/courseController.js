@@ -69,7 +69,7 @@ const createCourse = async (req, res) => {
           : userOrders[0]?.userId?.firstName +
             ' ' +
             userOrders[0]?.userId?.lastName
-      } has created a new course.`,
+      } has created a new ${isRefreshCourse&&' Refresh '} course.`,
       senderId: req.user.id,
       category: 'general',
       isAdmin: true,
@@ -147,7 +147,7 @@ const updateCourseStatus = async (req, res) => {
   const { courseId } = req.params;
   const { status } = req.body;
   try {
-    if (!['active', 'unactive'].includes(status)) {
+    if (!['active', 'unactive','update'].includes(status)) {
       return res.status(400).json({ message: 'Invalid status value' });
     }
     const updatedCourse = await Course.findByIdAndUpdate(
@@ -160,7 +160,7 @@ const updateCourseStatus = async (req, res) => {
       return res.status(404).json({ message: 'Course not found' });
     }
     await createNotification({
-      message: `The status of your course ${updatedCourse?.tipologia?.type} has changed.`,
+      message: `${updatedCourse?.status=='update'?`Admin want to update ${updatedCourse?.tipologia?.type} course `:`The status of your course ${updatedCourse?.tipologia?.type} has changed.`}`,
       senderId: req.user.id,
       category: 'general',
       receiverId: updatedCourse?.userId,
@@ -205,6 +205,69 @@ const assignDescente = async (req, res) => {
   }
 };
 
+const removeDiscente = async (req, res) => {
+  const { courseId, discenteId } = req.body;
+  try {
+    const course = await Course.findById(courseId);
+    if (!course) {
+      return res.status(404).json({ error: 'course not found' });
+    }
+
+    course.discente.pull(discenteId);
+    await course.save();
+    res.status(200).json(course);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+const deleteCourse = async (req, res) => {
+  const { courseId } = req.params;
+
+  try {
+    const deletedCourse = await Course.findByIdAndDelete(courseId);
+
+    if (!deletedCourse) {
+      return res.status(404).json({ message: 'Course not found' });
+    }
+
+    res.status(200).json({ message: 'Course successfully deleted' });
+  } catch (error) {
+    console.error('Error deleting course:', error);
+    res.status(500).json({ message: 'Error deleting course' });
+  }
+};
+
+const updateCourse = async (req, res) => {
+  const { courseId } = req.params;
+  const { città, via, numeroDiscenti, istruttori, direttoriCorso, giornate } = req.body;
+
+  try {
+    // Find the course by ID
+    const course = await Course.findById(courseId);
+    if (!course) {
+      return res.status(404).json({ message: 'Course not found' });
+    }
+
+    // Update only the allowed fields
+    if (città !== undefined) course.città = città;
+    if (via !== undefined) course.via = via;
+    if (numeroDiscenti !== undefined) course.numeroDiscenti = numeroDiscenti;
+    if (istruttori !== undefined) course.istruttore = istruttori; // Adjust key if necessary
+    if (direttoriCorso !== undefined) course.direttoreCorso = direttoriCorso;
+    if (giornate !== undefined) course.giornate = giornate;
+
+    // Save the updated course
+    const updatedCourse = await course.save();
+
+    res.status(200).json(updatedCourse);
+  } catch (error) {
+    console.error('Error updating course:', error);
+    res.status(500).json({ message: 'Error updating course' });
+  }
+};
+
+
 module.exports = {
   createCourse,
   getCoursesByUser,
@@ -212,4 +275,7 @@ module.exports = {
   updateCourseStatus,
   assignDescente,
   getCourseById,
+  removeDiscente,
+  updateCourse,
+  deleteCourse
 };
