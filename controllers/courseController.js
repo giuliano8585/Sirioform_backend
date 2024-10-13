@@ -69,7 +69,7 @@ const createCourse = async (req, res) => {
           : userOrders[0]?.userId?.firstName +
             ' ' +
             userOrders[0]?.userId?.lastName
-      } has created a new ${isRefreshCourse&&' Refresh '} course.`,
+      } has created a new ${isRefreshCourse && ' Refresh '} course.`,
       senderId: req.user.id,
       category: 'general',
       isAdmin: true,
@@ -120,10 +120,7 @@ const getCourseById = async (req, res) => {
   const { id } = req.params;
   try {
     const courses = await Course.findOne({ _id: id })
-      .populate('direttoreCorso')
-      .populate('istruttore')
-      .populate('tipologia')
-      .populate('discente');
+      .populate('tipologia');
     res.status(200).json(courses);
   } catch (error) {
     res.status(500).json({ message: 'Errore durante il recupero dei corsi' });
@@ -147,7 +144,7 @@ const updateCourseStatus = async (req, res) => {
   const { courseId } = req.params;
   const { status } = req.body;
   try {
-    if (!['active', 'unactive','update'].includes(status)) {
+    if (!['active', 'unactive', 'update'].includes(status)) {
       return res.status(400).json({ message: 'Invalid status value' });
     }
     const updatedCourse = await Course.findByIdAndUpdate(
@@ -160,7 +157,11 @@ const updateCourseStatus = async (req, res) => {
       return res.status(404).json({ message: 'Course not found' });
     }
     await createNotification({
-      message: `${updatedCourse?.status=='update'?`Admin want to update ${updatedCourse?.tipologia?.type} course `:`The status of your course ${updatedCourse?.tipologia?.type} has changed.`}`,
+      message: `${
+        updatedCourse?.status == 'update'
+          ? `Admin want to update ${updatedCourse?.tipologia?.type} course `
+          : `The status of your course ${updatedCourse?.tipologia?.type} has changed.`
+      }`,
       senderId: req.user.id,
       category: 'general',
       receiverId: updatedCourse?.userId,
@@ -240,7 +241,8 @@ const deleteCourse = async (req, res) => {
 
 const updateCourse = async (req, res) => {
   const { courseId } = req.params;
-  const { città, via, numeroDiscenti, istruttori, direttoriCorso, giornate } = req.body;
+  const { città, via, numeroDiscenti, istruttori, direttoriCorso, giornate } =
+    req.body;
 
   try {
     // Find the course by ID
@@ -267,7 +269,6 @@ const updateCourse = async (req, res) => {
   }
 };
 
-
 module.exports = {
   createCourse,
   getCoursesByUser,
@@ -277,5 +278,5 @@ module.exports = {
   getCourseById,
   removeDiscente,
   updateCourse,
-  deleteCourse
+  deleteCourse,
 };
