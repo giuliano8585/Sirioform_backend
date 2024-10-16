@@ -69,7 +69,7 @@ const createCourse = async (req, res) => {
           : userOrders[0]?.userId?.firstName +
             ' ' +
             userOrders[0]?.userId?.lastName
-      } has created a new ${isRefreshCourse && ' Refresh '} course.`,
+      } has created a new ${isRefreshCourse==true?' Refresh ':''} course.`,
       senderId: req.user.id,
       category: 'general',
       isAdmin: true,
@@ -120,6 +120,19 @@ const getCourseById = async (req, res) => {
   const { id } = req.params;
   try {
     const courses = await Course.findOne({ _id: id })
+      .populate('tipologia');
+    res.status(200).json(courses);
+  } catch (error) {
+    res.status(500).json({ message: 'Errore durante il recupero dei corsi' });
+  }
+};
+const getSingleCourseById = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const courses = await Course.findOne({ _id: id })
+      .populate('discente')
+      .populate('direttoreCorso')
+      .populate('istruttore')
       .populate('tipologia');
     res.status(200).json(courses);
   } catch (error) {
@@ -222,27 +235,108 @@ const removeDiscente = async (req, res) => {
   }
 };
 
+// const deleteCourse = async (req, res) => {
+//   const { courseId } = req.params;
+
+//   try {
+//     const deletedCourse = await Course.findByIdAndDelete(courseId);
+
+//     if (!deletedCourse) {
+//       return res.status(404).json({ message: 'Course not found' });
+//     }
+
+//     res.status(200).json({ message: 'Course successfully deleted' });
+//   } catch (error) {
+//     console.error('Error deleting course:', error);
+//     res.status(500).json({ message: 'Error deleting course' });
+//   }
+// };
+
+// const updateCourse = async (req, res) => {
+//   const { courseId } = req.params;
+//   const { città, via, numeroDiscenti, istruttori, direttoriCorso, giornate } =
+//     req.body;
+
+//   try {
+//     // Find the course by ID
+//     const course = await Course.findById(courseId);
+//     if (!course) {
+//       return res.status(404).json({ message: 'Course not found' });
+//     }
+
+//     // Update only the allowed fields
+//     if (città !== undefined) course.città = città;
+//     if (via !== undefined) course.via = via;
+//     if (numeroDiscenti !== undefined) course.numeroDiscenti = numeroDiscenti;
+//     if (istruttori !== undefined) course.istruttore = istruttori; // Adjust key if necessary
+//     if (direttoriCorso !== undefined) course.direttoreCorso = direttoriCorso;
+//     if (giornate !== undefined) course.giornate = giornate;
+
+//     // Save the updated course
+//     const updatedCourse = await course.save();
+
+//     res.status(200).json(updatedCourse);
+//   } catch (error) {
+//     console.error('Error updating course:', error);
+//     res.status(500).json({ message: 'Error updating course' });
+//   }
+// };
+
+
 const deleteCourse = async (req, res) => {
   const { courseId } = req.params;
 
   try {
-    const deletedCourse = await Course.findByIdAndDelete(courseId);
-
-    if (!deletedCourse) {
+    // Find the course by ID before deleting
+    const course = await Course.findById(courseId);
+    if (!course) {
       return res.status(404).json({ message: 'Course not found' });
     }
 
-    res.status(200).json({ message: 'Course successfully deleted' });
+    const userOrders = await Order.find({
+      userId: course.userId,
+      'orderItems.productId': course.tipologia,
+    });
+
+    if (!userOrders.length) {
+      return res.status(400).json({ message: 'No orders found for this user' });
+    }
+
+    // Return remaining kits to the user's order
+    let remainingDiscenti = course.numeroDiscenti;
+
+    for (const order of userOrders) {
+      for (const item of order.orderItems) {
+        if (item.productId.toString() === course.tipologia.toString() && remainingDiscenti > 0) {
+          const addedQuantity = Math.min(item.totalQuantity - item.quantity, remainingDiscenti);
+          item.quantity += addedQuantity;
+          remainingDiscenti -= addedQuantity;
+
+          // Save the updated order with increased kit quantity
+          await order.save();
+        }
+      }
+    }
+
+    // After returning the kits, delete the course
+    const deletedCourse = await Course.findByIdAndDelete(courseId);
+
+    if (!deletedCourse) {
+      return res.status(404).json({ message: 'Course not found after deletion' });
+    }
+
+    res.status(200).json({ message: 'Course successfully deleted and kits returned to the user' });
   } catch (error) {
     console.error('Error deleting course:', error);
     res.status(500).json({ message: 'Error deleting course' });
   }
 };
 
+
+
 const updateCourse = async (req, res) => {
   const { courseId } = req.params;
-  const { città, via, numeroDiscenti, istruttori, direttoriCorso, giornate } =
-    req.body;
+  const { città, via, numeroDiscenti, istruttori, direttoriCorso, giornate } = req.body;
 
   try {
     // Find the course by ID
@@ -251,23 +345,83 @@ const updateCourse = async (req, res) => {
       return res.status(404).json({ message: 'Course not found' });
     }
 
-    // Update only the allowed fields
+    // Fetch the user's orders for the kit used in this course
+    const userOrders = await Order.find({
+      userId: course.userId,
+      'orderItems.productId': course.tipologia
+    });
+
+    if (!userOrders.length) {
+      return res.status(400).json({ message: 'No kits found for the user' });
+    }
+
+    // Calculate the total available quantity of kits
+    let totalAvailableQuantity = 0;
+    userOrders.forEach(order => {
+      order.orderItems.forEach(item => {
+        if (item.productId.toString() === course.tipologia.toString()) {
+          totalAvailableQuantity += item.quantity;
+        }
+      });
+    });
+
+    // Calculate the current kits used in the course
+    const currentUsedKits = course.numeroDiscenti;
+
+    // If the new numeroDiscenti is provided, calculate the difference
+    if (numeroDiscenti !== undefined) {
+      const difference = numeroDiscenti - currentUsedKits;
+      
+      // Check if increasing the number of discenti exceeds the available kits
+      if (difference > totalAvailableQuantity) {
+        return res.status(400).json({ message: 'Not enough kits available to update the course' });
+      }
+
+      // Update numeroDiscenti
+      course.numeroDiscenti = numeroDiscenti;
+      
+      // Update the kit quantities in user orders accordingly
+      let remainingDifference = difference;
+      for (const order of userOrders) {
+        for (const item of order.orderItems) {
+          if (item.productId.toString() === course.tipologia.toString() && remainingDifference > 0) {
+            const usedQuantity = Math.min(item.quantity, remainingDifference);
+            item.quantity -= usedQuantity;
+            remainingDifference -= usedQuantity;
+            await order.save();
+          }
+        }
+      }
+    }
+
+    // Update other fields if provided
     if (città !== undefined) course.città = città;
     if (via !== undefined) course.via = via;
-    if (numeroDiscenti !== undefined) course.numeroDiscenti = numeroDiscenti;
-    if (istruttori !== undefined) course.istruttore = istruttori; // Adjust key if necessary
+    if (istruttori !== undefined) course.istruttore = istruttori;
     if (direttoriCorso !== undefined) course.direttoreCorso = direttoriCorso;
     if (giornate !== undefined) course.giornate = giornate;
 
     // Save the updated course
     const updatedCourse = await course.save();
-
+    await createNotification({
+      message: `${
+        req.user.role == 'center'
+          ? userOrders[0]?.userId?.name
+          : userOrders[0]?.userId?.firstName +
+            ' ' +
+            userOrders[0]?.userId?.lastName
+      } has updated the ${isRefreshCourse==true?' Refresh ':''}  course.`,
+      senderId: req.user.id,
+      category: 'general',
+      isAdmin: true,
+    });
     res.status(200).json(updatedCourse);
   } catch (error) {
     console.error('Error updating course:', error);
     res.status(500).json({ message: 'Error updating course' });
   }
 };
+
 
 module.exports = {
   createCourse,
@@ -279,4 +433,5 @@ module.exports = {
   removeDiscente,
   updateCourse,
   deleteCourse,
+  getSingleCourseById
 };
