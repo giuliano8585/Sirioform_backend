@@ -9,6 +9,7 @@ const {
   removeDiscente,
   updateCourse,
   deleteCourse,
+  getSingleCourseById,
 } = require('../controllers/courseController');
 const auth = require('../middleware/auth');
 const isAdmin = require('../middleware/isAdmin');
@@ -22,6 +23,7 @@ router.post('/', auth, createCourse);
 router.get('/user-courses', auth, getCoursesByUser);
 
 router.get('/user-courses/:id', auth, getCourseById);
+router.get('/user-course/:id', auth, getSingleCourseById);
 
 router.get('/', auth, isAdmin, getAllCourses);
 

@@ -126,6 +126,19 @@ const getCourseById = async (req, res) => {
     res.status(500).json({ message: 'Errore durante il recupero dei corsi' });
   }
 };
+const getSingleCourseById = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const courses = await Course.findOne({ _id: id })
+      .populate('discente')
+      .populate('direttoreCorso')
+      .populate('istruttore')
+      .populate('tipologia');
+    res.status(200).json(courses);
+  } catch (error) {
+    res.status(500).json({ message: 'Errore durante il recupero dei corsi' });
+  }
+};
 
 const getAllCourses = async (req, res) => {
   try {
@@ -420,4 +433,5 @@ module.exports = {
   removeDiscente,
   updateCourse,
   deleteCourse,
+  getSingleCourseById
 };
