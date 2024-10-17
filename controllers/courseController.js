@@ -69,7 +69,9 @@ const createCourse = async (req, res) => {
           : userOrders[0]?.userId?.firstName +
             ' ' +
             userOrders[0]?.userId?.lastName
-      } has created a new ${isRefreshCourse==true?' Refresh ':''} course.`,
+      } has created a new ${
+        isRefreshCourse == true ? ' Refresh ' : ''
+      } course.`,
       senderId: req.user.id,
       category: 'general',
       isAdmin: true,
@@ -119,24 +121,77 @@ const getCoursesByUser = async (req, res) => {
 const getCourseById = async (req, res) => {
   const { id } = req.params;
   try {
-    const courses = await Course.findOne({ _id: id })
-      .populate('tipologia');
+    const courses = await Course.findOne({ _id: id }).populate('tipologia');
     res.status(200).json(courses);
   } catch (error) {
     res.status(500).json({ message: 'Errore durante il recupero dei corsi' });
   }
 };
+// const getSingleCourseById = async (req, res) => {
+//   const { id } = req.params;
+//   try {
+//     const courses = await Course.findOne({ _id: id })
+//       .populate('discente')
+//       .populate('direttoreCorso')
+//       .populate('istruttore')
+//       .populate('tipologia');
+//     res.status(200).json(courses);
+//   } catch (error) {
+//     res.status(500).json({ message: 'Errore durante il recupero dei corsi' });
+//   }
+// };
+
 const getSingleCourseById = async (req, res) => {
   const { id } = req.params;
+
   try {
-    const courses = await Course.findOne({ _id: id })
+    // Find the course and populate its related fields
+    const course = await Course.findOne({ _id: id })
       .populate('discente')
       .populate('direttoreCorso')
       .populate('istruttore')
       .populate('tipologia');
-    res.status(200).json(courses);
+
+    if (!course) {
+      return res.status(404).json({ message: 'Course not found' });
+    }
+
+    // Find the user's order that contains the related kits for this course's tipologia
+    const order = await Order.findOne({
+      userId: course.userId,
+      'orderItems.productId': course.tipologia,
+    });
+    console.log('order: ', order);
+
+    if (!order) {
+      return res
+        .status(404)
+        .json({ message: 'Order not found for this course' });
+    }
+
+    // Find the order item for this course's tipologia and get the progressive numbers
+    const orderItem = order?.orderItems?.find(
+      (item) => item?.productId?._id.toString() == course?.tipologia?._id?.toString()
+    );
+    console.log('orderItem: ', orderItem);
+
+    // if (!orderItem) {
+    //   return res
+    //     .status(404)
+    //     .json({ message: 'Order item for this kit not found' });
+    // }
+
+    // Get the progressive numbers from the order item
+    const progressiveNumbers = orderItem.progressiveNumbers;
+
+    // Return the course details along with the progressive numbers of kits
+    res.status(200).json({
+      course,
+      progressiveNumbers,
+    });
   } catch (error) {
-    res.status(500).json({ message: 'Errore durante il recupero dei corsi' });
+    console.error('Error retrieving course:', error);
+    res.status(500).json({ message: 'Error retrieving course' });
   }
 };
 
@@ -282,7 +337,6 @@ const removeDiscente = async (req, res) => {
 //   }
 // };
 
-
 const deleteCourse = async (req, res) => {
   const { courseId } = req.params;
 
@@ -307,8 +361,14 @@ const deleteCourse = async (req, res) => {
 
     for (const order of userOrders) {
       for (const item of order.orderItems) {
-        if (item.productId.toString() === course.tipologia.toString() && remainingDiscenti > 0) {
-          const addedQuantity = Math.min(item.totalQuantity - item.quantity, remainingDiscenti);
+        if (
+          item.productId.toString() === course.tipologia.toString() &&
+          remainingDiscenti > 0
+        ) {
+          const addedQuantity = Math.min(
+            item.totalQuantity - item.quantity,
+            remainingDiscenti
+          );
           item.quantity += addedQuantity;
           remainingDiscenti -= addedQuantity;
 
@@ -322,21 +382,26 @@ const deleteCourse = async (req, res) => {
     const deletedCourse = await Course.findByIdAndDelete(courseId);
 
     if (!deletedCourse) {
-      return res.status(404).json({ message: 'Course not found after deletion' });
+      return res
+        .status(404)
+        .json({ message: 'Course not found after deletion' });
     }
 
-    res.status(200).json({ message: 'Course successfully deleted and kits returned to the user' });
+    res
+      .status(200)
+      .json({
+        message: 'Course successfully deleted and kits returned to the user',
+      });
   } catch (error) {
     console.error('Error deleting course:', error);
     res.status(500).json({ message: 'Error deleting course' });
   }
 };
 
-
-
 const updateCourse = async (req, res) => {
   const { courseId } = req.params;
-  const { città, via, numeroDiscenti, istruttori, direttoriCorso, giornate } = req.body;
+  const { città, via, numeroDiscenti, istruttori, direttoriCorso, giornate } =
+    req.body;
 
   try {
     // Find the course by ID
@@ -348,7 +413,7 @@ const updateCourse = async (req, res) => {
     // Fetch the user's orders for the kit used in this course
     const userOrders = await Order.find({
       userId: course.userId,
-      'orderItems.productId': course.tipologia
+      'orderItems.productId': course.tipologia,
     });
 
     if (!userOrders.length) {
@@ -357,8 +422,8 @@ const updateCourse = async (req, res) => {
 
     // Calculate the total available quantity of kits
     let totalAvailableQuantity = 0;
-    userOrders.forEach(order => {
-      order.orderItems.forEach(item => {
+    userOrders.forEach((order) => {
+      order.orderItems.forEach((item) => {
         if (item.productId.toString() === course.tipologia.toString()) {
           totalAvailableQuantity += item.quantity;
         }
@@ -371,20 +436,25 @@ const updateCourse = async (req, res) => {
     // If the new numeroDiscenti is provided, calculate the difference
     if (numeroDiscenti !== undefined) {
       const difference = numeroDiscenti - currentUsedKits;
-      
+
       // Check if increasing the number of discenti exceeds the available kits
       if (difference > totalAvailableQuantity) {
-        return res.status(400).json({ message: 'Not enough kits available to update the course' });
+        return res
+          .status(400)
+          .json({ message: 'Not enough kits available to update the course' });
       }
 
       // Update numeroDiscenti
       course.numeroDiscenti = numeroDiscenti;
-      
+
       // Update the kit quantities in user orders accordingly
       let remainingDifference = difference;
       for (const order of userOrders) {
         for (const item of order.orderItems) {
-          if (item.productId.toString() === course.tipologia.toString() && remainingDifference > 0) {
+          if (
+            item.productId.toString() === course.tipologia.toString() &&
+            remainingDifference > 0
+          ) {
             const usedQuantity = Math.min(item.quantity, remainingDifference);
             item.quantity -= usedQuantity;
             remainingDifference -= usedQuantity;
@@ -410,7 +480,7 @@ const updateCourse = async (req, res) => {
           : userOrders[0]?.userId?.firstName +
             ' ' +
             userOrders[0]?.userId?.lastName
-      } has updated the ${isRefreshCourse==true?' Refresh ':''}  course.`,
+      } has updated the ${isRefreshCourse == true ? ' Refresh ' : ''}  course.`,
       senderId: req.user.id,
       category: 'general',
       isAdmin: true,
@@ -422,7 +492,6 @@ const updateCourse = async (req, res) => {
   }
 };
 
-
 module.exports = {
   createCourse,
   getCoursesByUser,
@@ -433,5 +502,5 @@ module.exports = {
   removeDiscente,
   updateCourse,
   deleteCourse,
-  getSingleCourseById
+  getSingleCourseById,
 };
