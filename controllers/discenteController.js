@@ -75,4 +75,33 @@ const getAllDiscenti = async (req, res) => {
   }
 };
 
-module.exports = { createDiscente, getAllDiscenti,getUserDiscenti,updateDiscente,getUserDiscentiById };  // Esporta entrambe le funzioni
+const updateDiscentePatentNumber = async (req, res) => {
+  const { id } = req.params;
+  const { patentNumber } = req.body;
+
+  try {
+    // Check if patentNumber exists in the request
+    if (!patentNumber) {
+      return res.status(400).json({ message: 'Il numero di patente è richiesto' });
+    }
+
+    // Find the discente and push the new patent number to the array
+    const updatedDiscente = await Discente.findByIdAndUpdate(
+      id,
+      { patentNumber: patentNumber },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedDiscente) {
+      return res.status(404).json({ message: 'Discente non trovato' });
+    }
+
+    res.status(200).json(updatedDiscente);
+  } catch (error) {
+    console.error("Errore durante l'aggiornamento del numero di patente:", error);
+    res.status(500).json({ message: 'Errore durante l\'aggiornamento del numero di patente' });
+  }
+};
+
+
+module.exports = { createDiscente, getAllDiscenti,getUserDiscenti,updateDiscente,getUserDiscentiById ,updateDiscentePatentNumber};  // Esporta entrambe le funzioni
