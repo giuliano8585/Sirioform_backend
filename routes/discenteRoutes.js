@@ -1,5 +1,5 @@
 const express = require('express');
-const { createDiscente, getAllDiscenti,getUserDiscenti, getUserDiscentiById } = require('../controllers/discenteController'); 
+const { createDiscente, getAllDiscenti,getUserDiscenti, getUserDiscentiById ,updateDiscentePatentNumber} = require('../controllers/discenteController'); 
 const auth = require('../middleware/auth');
 const isAdmin = require('../middleware/isAdmin')
 const router = express.Router();
@@ -11,5 +11,6 @@ router.post('/', auth, createDiscente);
 router.get('/', auth, getUserDiscenti);  
 router.get('/all', auth,isAdmin, getAllDiscenti);  
 router.get('/:id', auth, getUserDiscentiById);  
+router.patch('/:id', auth, updateDiscentePatentNumber);  
 
 module.exports = router;

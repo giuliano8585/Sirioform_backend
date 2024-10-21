@@ -4,6 +4,7 @@ const Course = require('../models/Course');
 const { createNotification } = require('../utils/notificationService');
 const User = require('../models/User');
 const { default: mongoose } = require('mongoose');
+const Discente = require('../models/Discente');
 
 // Funzione per creare un nuovo corso
 const createCourse = async (req, res) => {
@@ -171,18 +172,31 @@ const getSingleCourseById = async (req, res) => {
 
     // Find the order item for this course's tipologia and get the progressive numbers
     const orderItem = order?.orderItems?.find(
-      (item) => item?.productId?._id.toString() == course?.tipologia?._id?.toString()
+      (item) =>
+        item?.productId?._id.toString() == course?.tipologia?._id?.toString()
     );
     console.log('orderItem: ', orderItem);
 
-    // if (!orderItem) {
-    //   return res
-    //     .status(404)
-    //     .json({ message: 'Order item for this kit not found' });
-    // }
+    if (!orderItem) {
+      return res
+        .status(404)
+        .json({ message: 'Order item for this kit not found' });
+    }
 
     // Get the progressive numbers from the order item
-    const progressiveNumbers = orderItem.progressiveNumbers;
+    let progressiveNumbers = orderItem.progressiveNumbers;
+
+        // Fetch all discenti who have a patentNumber
+        const discentiWithPatent = await Discente.find({
+          patentNumber: { $exists: true, $ne: [] },
+        });
+    
+        // Flatten all patent numbers from all discenti into a single array
+        const assignedProgressiveNumbers = discentiWithPatent.flatMap((discente) => discente.patentNumber);
+    
+        // Filter out the progressive numbers that have already been assigned
+        progressiveNumbers = progressiveNumbers.filter((number) => !assignedProgressiveNumbers.includes(number));
+    
 
     // Return the course details along with the progressive numbers of kits
     res.status(200).json({
@@ -387,11 +401,9 @@ const deleteCourse = async (req, res) => {
         .json({ message: 'Course not found after deletion' });
     }
 
-    res
-      .status(200)
-      .json({
-        message: 'Course successfully deleted and kits returned to the user',
-      });
+    res.status(200).json({
+      message: 'Course successfully deleted and kits returned to the user',
+    });
   } catch (error) {
     console.error('Error deleting course:', error);
     res.status(500).json({ message: 'Error deleting course' });
