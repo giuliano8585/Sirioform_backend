@@ -18,13 +18,13 @@ const UserSchema = new Schema({
   region: { type: String },
   // Fields for Center and Instructor roles
   name: { type: String }, 
-  piva: { type: String,unique:true},
+  piva: { type: String},
   isActive: { type: Boolean, default: false },
   // Fields specific to Instructor
   firstName: { type: String },
   lastName: { type: String }, 
-  fiscalCode: { type: String,unique:true },
-  brevetNumber: { type: String,unique:true },
+  fiscalCode: { type: String },
+  brevetNumber: { type: String },
   qualifications: [QualificationSchema],
   sanitarios: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Sanitario' }], 
   instructors: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
