@@ -186,17 +186,20 @@ const getSingleCourseById = async (req, res) => {
     // Get the progressive numbers from the order item
     let progressiveNumbers = orderItem.progressiveNumbers;
 
-        // Fetch all discenti who have a patentNumber
-        const discentiWithPatent = await Discente.find({
-          patentNumber: { $exists: true, $ne: [] },
-        });
-    
-        // Flatten all patent numbers from all discenti into a single array
-        const assignedProgressiveNumbers = discentiWithPatent.flatMap((discente) => discente.patentNumber);
-    
-        // Filter out the progressive numbers that have already been assigned
-        progressiveNumbers = progressiveNumbers.filter((number) => !assignedProgressiveNumbers.includes(number));
-    
+    // Fetch all discenti who have a patentNumber
+    const discentiWithPatent = await Discente.find({
+      patentNumber: { $exists: true, $ne: [] },
+    });
+
+    // Flatten all patent numbers from all discenti into a single array
+    const assignedProgressiveNumbers = discentiWithPatent.flatMap(
+      (discente) => discente.patentNumber
+    );
+
+    // Filter out the progressive numbers that have already been assigned
+    progressiveNumbers = progressiveNumbers.filter(
+      (number) => !assignedProgressiveNumbers.includes(number)
+    );
 
     // Return the course details along with the progressive numbers of kits
     res.status(200).json({

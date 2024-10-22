@@ -88,7 +88,7 @@ const updateDiscentePatentNumber = async (req, res) => {
     // Find the discente and push the new patent number to the array
     const updatedDiscente = await Discente.findByIdAndUpdate(
       id,
-      { patentNumber: patentNumber },
+      { $push: { patentNumber: patentNumber } },
       { new: true, runValidators: true }
     );
 

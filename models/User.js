@@ -23,7 +23,12 @@ const UserSchema = new Schema({
   // Fields specific to Instructor
   firstName: { type: String },
   lastName: { type: String }, 
-  fiscalCode: { type: String },
+  fiscalCode: {
+    type: String,
+    unique: function() {
+      return this.role === 'instructor';
+    }
+  },
   brevetNumber: { type: String },
   qualifications: [QualificationSchema],
   sanitarios: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Sanitario' }], 
