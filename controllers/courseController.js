@@ -229,19 +229,19 @@ const updateCourseStatus = async (req, res) => {
   const { courseId } = req.params;
   const { status } = req.body;
   try {
-    if (!['active', 'unactive', 'update'].includes(status)) {
+    if (!['active', 'unactive', 'update','end','complete'].includes(status)) {
       return res.status(400).json({ message: 'Invalid status value' });
     }
     const updatedCourse = await Course.findByIdAndUpdate(
       courseId,
       { status },
       { new: true }
-    ).populate('tipologia');
+    ).populate('tipologia userId');
     console.log('updatedCourse: ', updatedCourse);
     if (!updatedCourse) {
       return res.status(404).json({ message: 'Course not found' });
     }
-    await createNotification({
+    await createNotification(req?.user?.role=='admin'?{
       message: `${
         updatedCourse?.status == 'update'
           ? `Admin want to update ${updatedCourse?.tipologia?.type} course `
@@ -250,6 +250,13 @@ const updateCourseStatus = async (req, res) => {
       senderId: req.user.id,
       category: 'general',
       receiverId: updatedCourse?.userId,
+    }:{
+      message: `${
+        updatedCourse?.status == 'end' && `${req.user.role == 'center'? updatedCourse?.userId?.name: updatedCourse?.userId?.firstName + ' ' + updatedCourse?.userId?.lastName} want to end the ${updatedCourse?.tipologia?.type} course `
+      }`,
+      senderId: req.user.id,
+      category: 'general',
+      isAdmin:true
     });
     res.status(200).json(updatedCourse);
   } catch (error) {
@@ -281,6 +288,11 @@ const assignDescente = async (req, res) => {
       return res
         .status(400)
         .json({ error: 'Discente is already assigned to this course' });
+    }
+    if (course.discente.length>=Number(course.numeroDiscenti)) {
+      return res
+        .status(400)
+        .json({ error: `You already assigned ${course.numeroDiscenti} discente` });
     }
     course.discente.push(discenteId);
     await course.save();

@@ -27,7 +27,7 @@ router.get('/user-course/:id', auth, getSingleCourseById);
 
 router.get('/', auth, isAdmin, getAllCourses);
 
-router.patch('/courses/:courseId/status', auth, isAdmin, updateCourseStatus);
+router.patch('/courses/:courseId/status', auth, updateCourseStatus);
 
 router.patch('/assign-discente', assignDescente);
 
