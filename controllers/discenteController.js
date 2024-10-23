@@ -14,7 +14,7 @@ const createDiscente = async (req, res) => {
       regione,
       email,
       telefono,
-      patentNumber,
+      patentNumber:patentNumber==null?[]:patentNumber,
       userId: req.user.id,
     });
     await newDiscente.save();
