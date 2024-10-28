@@ -229,7 +229,7 @@ const updateCourseStatus = async (req, res) => {
   const { courseId } = req.params;
   const { status } = req.body;
   try {
-    if (!['active', 'unactive', 'update','end','complete'].includes(status)) {
+    if (!['active', 'unactive', 'update','end','complete','finalUpdate'].includes(status)) {
       return res.status(400).json({ message: 'Invalid status value' });
     }
     const updatedCourse = await Course.findByIdAndUpdate(
@@ -243,7 +243,7 @@ const updateCourseStatus = async (req, res) => {
     }
     await createNotification(req?.user?.role=='admin'?{
       message: `${
-        updatedCourse?.status == 'update'
+        updatedCourse?.status == 'update' || updatedCourse?.status=='finalUpdate'
           ? `Admin want to update ${updatedCourse?.tipologia?.type} course `
           : `The status of your course ${updatedCourse?.tipologia?.type} has changed.`
       }`,

@@ -37,7 +37,7 @@ const courseSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }, 
   discente: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Discente' }], 
   progressiveNumber: { type: String }, 
-  status: { type: String, enum: ['active', 'unactive','update','end','complete'], default: 'unactive' },
+  status: { type: String, enum: ['active', 'unactive','update','end','complete','finalUpdate'], default: 'unactive' },
 }, {
   timestamps: true 
 });
