@@ -33,7 +33,7 @@ router.patch('/assign-discente', assignDescente);
 
 router.patch('/remove-discente', removeDiscente);
 
-router.patch('/courses/:courseId', updateCourse);
+router.patch('/courses/:courseId',auth, updateCourse);
 
 router.delete('/courses/:courseId', deleteCourse);
 
