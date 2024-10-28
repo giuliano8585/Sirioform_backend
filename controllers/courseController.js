@@ -507,7 +507,7 @@ const updateCourse = async (req, res) => {
           : userOrders[0]?.userId?.firstName +
             ' ' +
             userOrders[0]?.userId?.lastName
-      } has updated the ${isRefreshCourse == true ? ' Refresh ' : ''}  course.`,
+      } has updated the  course.`,
       senderId: req.user.id,
       category: 'general',
       isAdmin: true,
