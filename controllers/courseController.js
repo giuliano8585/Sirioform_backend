@@ -128,19 +128,6 @@ const getCourseById = async (req, res) => {
     res.status(500).json({ message: 'Errore durante il recupero dei corsi' });
   }
 };
-// const getSingleCourseById = async (req, res) => {
-//   const { id } = req.params;
-//   try {
-//     const courses = await Course.findOne({ _id: id })
-//       .populate('discente')
-//       .populate('direttoreCorso')
-//       .populate('istruttore')
-//       .populate('tipologia');
-//     res.status(200).json(courses);
-//   } catch (error) {
-//     res.status(500).json({ message: 'Errore durante il recupero dei corsi' });
-//   }
-// };
 
 const getSingleCourseById = async (req, res) => {
   const { id } = req.params;
@@ -157,34 +144,29 @@ const getSingleCourseById = async (req, res) => {
       return res.status(404).json({ message: 'Course not found' });
     }
 
-    // Find the user's order that contains the related kits for this course's tipologia
-    const order = await Order.findOne({
+    // Find all orders that contain the related kits for this course's tipologia
+    const orders = await Order.find({
       userId: course.userId,
       'orderItems.productId': course.tipologia,
     });
-    console.log('order: ', order);
 
-    if (!order) {
+    if (!orders.length) {
       return res
         .status(404)
-        .json({ message: 'Order not found for this course' });
+        .json({ message: 'Orders not found for this course' });
     }
 
-    // Find the order item for this course's tipologia and get the progressive numbers
-    const orderItem = order?.orderItems?.find(
-      (item) =>
-        item?.productId?._id.toString() == course?.tipologia?._id?.toString()
-    );
-    console.log('orderItem: ', orderItem);
-
-    if (!orderItem) {
-      return res
-        .status(404)
-        .json({ message: 'Order item for this kit not found' });
-    }
-
-    // Get the progressive numbers from the order item
-    let progressiveNumbers = orderItem.progressiveNumbers;
+    // Collect all progressive numbers from each matching order item
+    let allProgressiveNumbers = [];
+    orders.forEach((order) => {
+      order.orderItems.forEach((item) => {
+        if (item.productId.toString() === course.tipologia._id.toString()) {
+          allProgressiveNumbers = allProgressiveNumbers.concat(
+            item.progressiveNumbers
+          );
+        }
+      });
+    });
 
     // Fetch all discenti who have a patentNumber
     const discentiWithPatent = await Discente.find({
@@ -197,14 +179,14 @@ const getSingleCourseById = async (req, res) => {
     );
 
     // Filter out the progressive numbers that have already been assigned
-    progressiveNumbers = progressiveNumbers.filter(
+    const availableProgressiveNumbers = allProgressiveNumbers.filter(
       (number) => !assignedProgressiveNumbers.includes(number)
     );
 
     // Return the course details along with the progressive numbers of kits
     res.status(200).json({
       course,
-      progressiveNumbers,
+      progressiveNumbers: availableProgressiveNumbers,
     });
   } catch (error) {
     console.error('Error retrieving course:', error);
@@ -218,6 +200,7 @@ const getAllCourses = async (req, res) => {
       .populate('direttoreCorso')
       .populate('tipologia')
       .populate('userId')
+      .populate('discente')
       .populate('istruttore');
     res.status(200).json(courses);
   } catch (error) {
@@ -225,40 +208,137 @@ const getAllCourses = async (req, res) => {
   }
 };
 
+// const updateCourseStatus = async (req, res) => {
+//   const { courseId } = req.params;
+//   const { status } = req.body;
+//   try {
+//     if (!['active', 'unactive', 'update','end','complete','finalUpdate'].includes(status)) {
+//       return res.status(400).json({ message: 'Invalid status value' });
+//     }
+//     const updatedCourse = await Course.findByIdAndUpdate(
+//       courseId,
+//       { status },
+//       { new: true }
+//     ).populate('tipologia discente userId');
+//     console.log('updatedCourse: ', updatedCourse);
+//     if (!updatedCourse) {
+//       return res.status(404).json({ message: 'Course not found' });
+//     }
+//     await createNotification(req?.user?.role=='admin'?{
+//       message: `${
+//         updatedCourse?.status == 'update' || updatedCourse?.status=='finalUpdate'
+//           ? `Admin want to update ${updatedCourse?.tipologia?.type} course `
+//           : `The status of your course ${updatedCourse?.tipologia?.type} has changed.`
+//       }`,
+//       senderId: req.user.id,
+//       category: 'general',
+//       receiverId: updatedCourse?.userId,
+//     }:{
+//       message: `${
+//         updatedCourse?.status == 'end' && `${req.user.role == 'center'? updatedCourse?.userId?.name: updatedCourse?.userId?.firstName + ' ' + updatedCourse?.userId?.lastName} want to end the ${updatedCourse?.tipologia?.type} course `
+//       }`,
+//       senderId: req.user.id,
+//       category: 'general',
+//       isAdmin:true
+//     });
+//     res.status(200).json(updatedCourse);
+//   } catch (error) {
+//     console.error('Error updating course status:', error);
+//     res.status(500).json({ message: 'Error updating course status' });
+//   }
+// };
 const updateCourseStatus = async (req, res) => {
   const { courseId } = req.params;
   const { status } = req.body;
+
   try {
-    if (!['active', 'unactive', 'update','end','complete','finalUpdate'].includes(status)) {
+    if (
+      ![
+        'active',
+        'unactive',
+        'update',
+        'end',
+        'complete',
+        'finalUpdate',
+      ].includes(status)
+    ) {
       return res.status(400).json({ message: 'Invalid status value' });
     }
-    const updatedCourse = await Course.findByIdAndUpdate(
-      courseId,
-      { status },
-      { new: true }
-    ).populate('tipologia userId');
-    console.log('updatedCourse: ', updatedCourse);
-    if (!updatedCourse) {
+
+    // Find the course with the provided ID and populate necessary fields
+    const course = await Course.findById(courseId).populate(
+      'tipologia discente userId'
+    );
+    if (!course) {
       return res.status(404).json({ message: 'Course not found' });
     }
-    await createNotification(req?.user?.role=='admin'?{
-      message: `${
-        updatedCourse?.status == 'update' || updatedCourse?.status=='finalUpdate'
-          ? `Admin want to update ${updatedCourse?.tipologia?.type} course `
-          : `The status of your course ${updatedCourse?.tipologia?.type} has changed.`
-      }`,
-      senderId: req.user.id,
-      category: 'general',
-      receiverId: updatedCourse?.userId,
-    }:{
-      message: `${
-        updatedCourse?.status == 'end' && `${req.user.role == 'center'? updatedCourse?.userId?.name: updatedCourse?.userId?.firstName + ' ' + updatedCourse?.userId?.lastName} want to end the ${updatedCourse?.tipologia?.type} course `
-      }`,
-      senderId: req.user.id,
-      category: 'general',
-      isAdmin:true
-    });
-    res.status(200).json(updatedCourse);
+    console.log('course: ', course);
+    
+    // Check patent number for each discente if status is 'end'
+
+    if (status === 'end') {
+      const order = await Order.findOne({
+        'orderItems.productId': course?.tipologia?._id,
+      }).populate('orderItems.productId');
+    
+      if (!order) {
+        return res
+          .status(404)
+          .json({ message: 'Kit non trovato per il numero di patente fornito' });
+      }
+    
+      const allProgressiveNumbers = order.orderItems
+        .map(item => item.progressiveNumbers)
+        .flat();
+    
+      // Ensure every `discente` has at least one matching patent number in `allProgressiveNumbers`
+      const allDiscentesHaveMatch = course.discente.every(discente =>
+        discente.patentNumber.some(patentNumber =>
+          allProgressiveNumbers.includes(patentNumber)
+        )
+      );
+    
+      if (!allDiscentesHaveMatch) {
+        return res.status(400).json({
+          message: `Each student must have a patent number with type ${course.tipologia.type} before ending the course.`,
+        });
+      }
+    }
+    
+
+    // Update the course status
+    course.status = status;
+    await course.save();
+
+    // Create notification based on the updated status
+    await createNotification(
+      req?.user?.role === 'admin'
+        ? {
+            message: `${
+              status === 'update' || status === 'finalUpdate'
+                ? `Admin wants to update ${course?.tipologia?.type} course.`
+                : `The status of your course ${course?.tipologia?.type} has changed.`
+            }`,
+            senderId: req.user.id,
+            category: 'general',
+            receiverId: course?.userId,
+          }
+        : {
+            message: `${
+              status === 'end' &&
+              `${
+                req.user.role === 'center'
+                  ? course?.userId?.name
+                  : course?.userId?.firstName + ' ' + course?.userId?.lastName
+              } wants to end the ${course?.tipologia?.type} course.`
+            }`,
+            senderId: req.user.id,
+            category: 'general',
+            isAdmin: true,
+          }
+    );
+
+    res.status(200).json(course);
   } catch (error) {
     console.error('Error updating course status:', error);
     res.status(500).json({ message: 'Error updating course status' });
@@ -289,10 +369,12 @@ const assignDescente = async (req, res) => {
         .status(400)
         .json({ error: 'Discente is already assigned to this course' });
     }
-    if (course.discente.length>=Number(course.numeroDiscenti)) {
+    if (course.discente.length >= Number(course.numeroDiscenti)) {
       return res
         .status(400)
-        .json({ error: `You already assigned ${course.numeroDiscenti} discente` });
+        .json({
+          error: `You already assigned ${course.numeroDiscenti} discente`,
+        });
     }
     course.discente.push(discenteId);
     await course.save();
