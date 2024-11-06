@@ -10,6 +10,8 @@ const {
   updateCourse,
   deleteCourse,
   getSingleCourseById,
+  getCoursesByDiscenteId,
+  addCourseQuantity,
 } = require('../controllers/courseController');
 const auth = require('../middleware/auth');
 const isAdmin = require('../middleware/isAdmin');
@@ -23,6 +25,7 @@ router.post('/', auth, createCourse);
 router.get('/user-courses', auth, getCoursesByUser);
 
 router.get('/user-courses/:id', auth, getCourseById);
+router.get('/discente-courses/:id', auth, getCoursesByDiscenteId);
 router.get('/user-course/:id', auth, getSingleCourseById);
 
 router.get('/', auth, isAdmin, getAllCourses);
@@ -34,6 +37,7 @@ router.patch('/assign-discente', assignDescente);
 router.patch('/remove-discente', removeDiscente);
 
 router.patch('/courses/:courseId',auth, updateCourse);
+router.patch('/courses/add-quatity/:courseId',auth, addCourseQuantity);
 
 router.delete('/courses/:courseId', deleteCourse);
 

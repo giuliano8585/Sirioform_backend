@@ -119,6 +119,28 @@ const getCoursesByUser = async (req, res) => {
   }
 };
 
+const getCoursesByDiscenteId = async (req, res) => {
+  try {
+    const discenteId = req.params.id;
+    console.log('discenteId: ', discenteId);
+
+    if (!mongoose.Types.ObjectId.isValid(discenteId)) {
+      return res.status(400).json({ message: 'Invalid discenteId format' });
+    }
+
+    const courses = await Course.find({
+      userId: req.user.id,
+      discente: discenteId,
+    })
+      .populate('tipologia')
+      .populate('discente');
+
+    res.status(200).json(courses);
+  } catch (error) {
+    res.status(500).json({ message: 'Errore durante il recupero dei corsi' });
+  }
+};
+
 const getCourseById = async (req, res) => {
   const { id } = req.params;
   try {
@@ -273,38 +295,37 @@ const updateCourseStatus = async (req, res) => {
       return res.status(404).json({ message: 'Course not found' });
     }
     console.log('course: ', course);
-    
+
     // Check patent number for each discente if status is 'end'
 
     if (status === 'end') {
       const order = await Order.findOne({
         'orderItems.productId': course?.tipologia?._id,
       }).populate('orderItems.productId');
-    
+
       if (!order) {
-        return res
-          .status(404)
-          .json({ message: 'Kit non trovato per il numero di patente fornito' });
+        return res.status(404).json({
+          message: 'Kit non trovato per il numero di patente fornito',
+        });
       }
-    
+
       const allProgressiveNumbers = order.orderItems
-        .map(item => item.progressiveNumbers)
+        .map((item) => item.progressiveNumbers)
         .flat();
-    
+
       // Ensure every `discente` has at least one matching patent number in `allProgressiveNumbers`
-      const allDiscentesHaveMatch = course.discente.every(discente =>
-        discente.patentNumber.some(patentNumber =>
+      const allDiscentesHaveMatch = course.discente.every((discente) =>
+        discente.patentNumber.some((patentNumber) =>
           allProgressiveNumbers.includes(patentNumber)
         )
       );
-    
+
       if (!allDiscentesHaveMatch) {
         return res.status(400).json({
           message: `Each student must have a patent number with type ${course.tipologia.type} before ending the course.`,
         });
       }
     }
-    
 
     // Update the course status
     course.status = status;
@@ -370,11 +391,9 @@ const assignDescente = async (req, res) => {
         .json({ error: 'Discente is already assigned to this course' });
     }
     if (course.discente.length >= Number(course.numeroDiscenti)) {
-      return res
-        .status(400)
-        .json({
-          error: `You already assigned ${course.numeroDiscenti} discente`,
-        });
+      return res.status(400).json({
+        error: `You already assigned ${course.numeroDiscenti} discente`,
+      });
     }
     course.discente.push(discenteId);
     await course.save();
@@ -600,6 +619,92 @@ const updateCourse = async (req, res) => {
     res.status(500).json({ message: 'Error updating course' });
   }
 };
+const addCourseQuantity = async (req, res) => {
+  const { courseId } = req.params;
+  const { numeroDiscenti } = req.body;
+
+  try {
+    // Find the course by ID
+    const course = await Course.findById(courseId);
+    if (!course) {
+      return res.status(404).json({ message: 'Course not found' });
+    }
+
+    // Fetch the user's orders for the kit used in this course
+    const userOrders = await Order.find({
+      userId: course.userId,
+      'orderItems.productId': course.tipologia,
+    });
+
+    if (!userOrders.length) {
+      return res.status(400).json({ message: 'No kits found for the user' });
+    }
+
+    // Calculate the total available quantity of kits
+    let totalAvailableQuantity = 0;
+    userOrders.forEach((order) => {
+      order.orderItems.forEach((item) => {
+        if (item.productId.toString() === course.tipologia.toString()) {
+          totalAvailableQuantity += item.quantity;
+        }
+      });
+    });
+
+    // Calculate the current kits used in the course
+    const currentUsedKits = course.numeroDiscenti;
+
+    // Calculate the difference to check if quantity can be increased
+    const difference = numeroDiscenti - currentUsedKits;
+    if (difference <= 0) {
+      return res
+        .status(400)
+        .json({ message: 'Only additional quantity can be added' });
+    }
+
+    // Ensure the additional quantity does not exceed available kits
+    if (difference > totalAvailableQuantity) {
+      return res
+        .status(400)
+        .json({ message: 'Not enough kits available to increase quantity' });
+    }
+
+    // Update numeroDiscenti
+    course.numeroDiscenti = numeroDiscenti;
+
+    // Deduct the added quantity from user orders
+    let remainingDifference = difference;
+    for (const order of userOrders) {
+      for (const item of order.orderItems) {
+        if (
+          item.productId.toString() === course.tipologia.toString() &&
+          remainingDifference > 0
+        ) {
+          const usedQuantity = Math.min(item.quantity, remainingDifference);
+          item.quantity -= usedQuantity;
+          remainingDifference -= usedQuantity;
+          await order.save();
+        }
+      }
+    }
+
+    // Save the updated course
+    const updatedCourse = await course.save();
+
+    // Send notification (optional)
+    await createNotification({
+      message: `${req.user.firstName} ${req.user.lastName} has added quantity to the course.`,
+      senderId: req.user.id,
+      category: 'general',
+      isAdmin: true,
+    });
+
+    res.status(200).json(updatedCourse);
+  } catch (error) {
+    console.error('Error updating course quantity:', error);
+    res.status(500).json({ message: 'Error updating course quantity' });
+  }
+};
+
 
 module.exports = {
   createCourse,
@@ -612,4 +717,6 @@ module.exports = {
   updateCourse,
   deleteCourse,
   getSingleCourseById,
+  getCoursesByDiscenteId,
+  addCourseQuantity,
 };
