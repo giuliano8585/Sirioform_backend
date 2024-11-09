@@ -4,11 +4,12 @@ const fs = require('fs');
 
 exports.createKit = async (req, res) => {
   try {
-    const { code, type,isRefreshKit, description, cost1, cost2, cost3 } = req.body;
+    const { code, type,isRefreshKit,isForInstructor, description, cost1, cost2, cost3 } = req.body;
     const newKit = new Kit({
       code,
       type,
       isRefreshKit,
+      isForInstructor,
       description,
       cost1,
       cost2,
@@ -39,7 +40,7 @@ exports.updateKit = async (req, res) => {
     if (!kit) {
       return res.status(404).json({ error: 'Kit non trovato.' });
     }
-    const fieldsToUpdate = ['code', 'type','isRefreshKit', 'description', 'cost1', 'cost2', 'cost3'];
+    const fieldsToUpdate = ['code', 'type','isRefreshKit','isForInstructor', 'description', 'cost1', 'cost2', 'cost3'];
     fieldsToUpdate.forEach(field => {
       if (req.body[field] !== undefined) {
         kit[field] = req.body[field];

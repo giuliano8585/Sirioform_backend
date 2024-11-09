@@ -16,6 +16,13 @@ const createOrderController = async (req, res) => {
       return res.status(400).json({ message: 'User information is missing.' });
     }
 
+    for (let quantity of quantities) {
+      if (quantity < 6 || quantity % 6 !== 0) {
+        console.log('Quantity must be a multiple of 6 and at least 6.');
+        return res.status(400).json({ message: 'Quantity must be a multiple of 6 and at least 6.' });
+      }
+    }
+
     const orders = await Order.find();
     let maxProgressiveNumber = 0;
 
