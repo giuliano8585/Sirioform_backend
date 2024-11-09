@@ -29,6 +29,7 @@ const courseSchema = new mongoose.Schema({
   tipologia: { type: mongoose.Schema.Types.ObjectId, ref: 'Kit', required: true },
   città: { type: String, required: true },   
   via: { type: String, required: true },
+  presso: { type: String, required: true },
   numeroDiscenti: { type: Number, required: true },
   istruttore: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }],   
   direttoreCorso:  [{ type: mongoose.Schema.Types.ObjectId, ref: 'Sanitario', required: true }], 

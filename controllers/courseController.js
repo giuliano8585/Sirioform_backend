@@ -12,6 +12,7 @@ const createCourse = async (req, res) => {
     tipologia,
     città,
     via,
+    presso,
     numeroDiscenti,
     istruttori,
     direttoriCorso,
@@ -53,6 +54,7 @@ const createCourse = async (req, res) => {
       tipologia,
       città,
       via,
+      presso,
       numeroDiscenti,
       istruttore: istruttori,
       direttoreCorso: direttoriCorso,
@@ -528,7 +530,7 @@ const deleteCourse = async (req, res) => {
 
 const updateCourse = async (req, res) => {
   const { courseId } = req.params;
-  const { città, via, numeroDiscenti, istruttori, direttoriCorso, giornate } =
+  const { città, via,presso, numeroDiscenti, istruttori, direttoriCorso, giornate } =
     req.body;
 
   try {
@@ -595,6 +597,7 @@ const updateCourse = async (req, res) => {
     // Update other fields if provided
     if (città !== undefined) course.città = città;
     if (via !== undefined) course.via = via;
+    if (presso !== undefined) course.presso = presso;
     if (istruttori !== undefined) course.istruttore = istruttori;
     if (direttoriCorso !== undefined) course.direttoreCorso = direttoriCorso;
     if (giornate !== undefined) course.giornate = giornate;
