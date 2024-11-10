@@ -19,7 +19,11 @@ const createOrderController = async (req, res) => {
     for (let quantity of quantities) {
       if (quantity < 6 || quantity % 6 !== 0) {
         console.log('Quantity must be a multiple of 6 and at least 6.');
-        return res.status(400).json({ message: 'Quantity must be a multiple of 6 and at least 6.' });
+        return res
+          .status(400)
+          .json({
+            message: 'Quantity must be a multiple of 6 and at least 6.',
+          });
       }
     }
 
@@ -121,10 +125,12 @@ const getAllOrders = async (req, res) => {
   try {
     if (req.user?.role == 'admin') {
       console.log('User is admin, fetching all orders...');
-      const orders = await Order.find().populate(
-        'userId orderItems.productId',
-        'firstName lastName role name type code isRefreshCourse'
-      ).populate('orderItems');
+      const orders = await Order.find()
+        .populate(
+          'userId orderItems.productId',
+          'firstName lastName role name type code isRefreshCourse isForInstructor'
+        )
+        .populate('orderItems');
       console.log('Orders fetched with populate:', orders);
       res.json(orders);
     } else {
@@ -162,16 +168,19 @@ const getUserOrders = async (req, res) => {
 
 const getProdottiAcquistati = async (req, res) => {
   try {
-    const orders = await Order.find({ userId: req.user.id }).populate('orderItems.productId');
+    const orders = await Order.find({ userId: req.user.id }).populate(
+      'orderItems.productId'
+    );
     const prodottiAcquistati = orders.reduce((acc, order) => {
       order.orderItems.forEach((item) => {
         const prodotto = acc.find((prod) =>
           prod._id.equals(item.productId._id)
-      );
+        );
         if (prodotto) {
           prodotto.quantity += item.quantity;
           prodotto.totalQuantity += item.totalQuantity;
           prodotto.isRefreshKit;
+          prodotto.isForInstructor;
           prodotto.progressiveNumbers = prodotto.progressiveNumbers.concat(
             item.progressiveNumbers
           );
@@ -180,8 +189,9 @@ const getProdottiAcquistati = async (req, res) => {
             _id: item.productId._id,
             title: item.productId.type,
             quantity: item.quantity,
-            isRefreshKit:item.productId.isRefreshKit,
-            totalQuantity: item.totalQuantity||0,
+            isRefreshKit: item.productId.isRefreshKit,
+            isForInstructor: item.productId.isForInstructor,
+            totalQuantity: item.totalQuantity || 0,
             progressiveNumbers: item.progressiveNumbers || [],
           });
         }
@@ -190,7 +200,9 @@ const getProdottiAcquistati = async (req, res) => {
     }, []);
     res.status(200).json(prodottiAcquistati);
   } catch (err) {
-    res.status(500).json({ message: 'Errore durante il recupero dei prodotti acquistati' });
+    res
+      .status(500)
+      .json({ message: 'Errore durante il recupero dei prodotti acquistati' });
   }
 };
 
