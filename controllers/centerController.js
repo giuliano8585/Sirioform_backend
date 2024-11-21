@@ -308,3 +308,30 @@ exports.getCenterInstructors = async (req, res) => {
   }
 
 };
+
+exports.deleteCenter = async (req, res) => {
+  const { centerId } = req.params;
+
+  try {
+    const center = await User.findById(centerId);
+    if (!center || center.role !== 'center') {
+      return res.status(404).json({ error: 'Center not found' });
+    }
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Unauthorized' });
+    }
+    await User.findByIdAndDelete(centerId);
+    res.status(200).json({ message: 'Center deleted successfully' });
+
+    // Optionally, you can add additional logic like sending a notification or email.
+    // sendEmail(center.email, 'Account Deleted', 'Your account has been deleted.');
+    // await createNotification({
+    //   message: `Center with ID ${centerId} has been deleted.`,
+    //   senderId: null,
+    //   category: 'centerAccount',
+    //   isAdmin: true,
+    // });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
