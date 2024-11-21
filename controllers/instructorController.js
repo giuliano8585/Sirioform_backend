@@ -214,3 +214,30 @@ exports.getInstructorSanitarios = async (req, res) => {
   }
 };
 
+
+exports.deleteInstructor = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const instructor = await User.findById(id);    if (!instructor || instructor.role !== 'instructor') {
+      return res.status(404).json({ error: 'Instructor not found' });
+    }
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Unauthorized' });
+    }
+    await User.findByIdAndDelete(id);
+    res.status(200).json({ message: 'Center deleted successfully' });
+
+    // Optionally, you can add additional logic like sending a notification or email.
+    // sendEmail(center.email, 'Account Deleted', 'Your account has been deleted.');
+    // await createNotification({
+    //   message: `Center with ID ${centerId} has been deleted.`,
+    //   senderId: null,
+    //   category: 'centerAccount',
+    //   isAdmin: true,
+    // });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+

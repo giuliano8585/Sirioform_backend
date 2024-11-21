@@ -16,7 +16,9 @@ const {
   getAssignedInstructors,
   getCenterInstructors,
   updateCenter,
+  deleteCenter,
 } = require('../controllers/centerController');
+const isAdmin = require('../middleware/isAdmin');
 
 // Route per la registrazione di un nuovo centro
 router.post('/register', registerCenter);
@@ -59,5 +61,8 @@ router.get('/:id/instructors', getAssignedInstructors);
 
 // Route per ottenere gli istruttori del centro loggato (richiede autenticazione)
 router.get('/:centerId/instructors', auth, getCenterInstructors);
+
+router.delete('/:centerId', auth, isAdmin,deleteCenter);
+
 
 module.exports = router;
