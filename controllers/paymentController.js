@@ -16,15 +16,34 @@ const createPaymentSession = async (req, res) => {
   const { productIds, quantities } = req.body;
 
   try {
-    const products = await Kit.find({ _id: { $in: productIds } });
+    const productIdArray = Array.isArray(productIds) ? productIds : [productIds];
+    console.log('productIdArray: ', productIdArray);
+    const quantityArray = Array.isArray(quantities) ? quantities : [quantities];
 
+    const products = await Kit.find({ _id: { $in: productIdArray } });
+    console.log('products: ', products);
+
+    if (products?.length === 0) {
+      return res.status(404).json({ message: 'No products found for the provided IDs' });
+    }
+
+    // Calculate total amount
     const amount = products.reduce((total, product, index) => {
-      const quantity = quantities[index];
+      const quantity = quantityArray[index] || 1; // Default to 1 if quantity is not specified
       const price = calculatePrice(product, quantity);
       return total + price * quantity;
     }, 0);
 
-    console.log('amount: ', amount * 100);
+    console.log('Calculated Amount:', amount * 100);
+    // const products = await Kit.find({ _id: { $in: productIds } });
+
+    // const amount = products.reduce((total, product, index) => {
+    //   const quantity = quantities[index];
+    //   const price = calculatePrice(product, quantity);
+    //   return total + price * quantity;
+    // }, 0);
+
+    // console.log('amount: ', amount * 100);
     // Create a PaymentIntent
     const paymentIntent = await stripe.paymentIntents.create({
       amount: Math.round(amount * 100) + 1000,

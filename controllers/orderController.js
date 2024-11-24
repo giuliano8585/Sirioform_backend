@@ -9,6 +9,8 @@ const extractProgressiveNumber = (progressiveNumber) => {
 const createOrderController = async (req, res) => {
   console.log('req users: ', req.user);
   const { productIds, quantities } = req.body;
+  console.log('quantities: ', quantities);
+  console.log('productIds: ', productIds);
 
   try {
     if (!req.user || !req.user.id) {
@@ -28,6 +30,7 @@ const createOrderController = async (req, res) => {
     }
 
     const orders = await Order.find();
+    console.log('orders: ', orders);
     let maxProgressiveNumber = 0;
 
     orders.forEach((order) => {
@@ -78,17 +81,20 @@ const createOrderController = async (req, res) => {
       });
       totalPrice += price * quantities[i];
     }
-
+    console.log('orderItems: ', orderItems);
+    
     const newOrder = new Order({
       userId: req.user.id,
       orderItems: orderItems,
       totalPrice: totalPrice,
     });
-
+    
+    console.log('newOrder: ', newOrder);
     const savedOrder = await newOrder.save();
     console.log('Order successfully created:', savedOrder);
     res.status(201).json(savedOrder);
   } catch (err) {
+    console.log('err: ', err);
     res
       .status(500)
       .json({ message: 'Server error, order could not be created' });
