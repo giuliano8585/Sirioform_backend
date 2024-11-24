@@ -21,6 +21,7 @@ app.use('/api/kits', require('./routes/kits'));
 app.use('/api/sanitarios', require('./routes/sanitarios'));
 
 app.use('/api/orders', require('./routes/orderRoutes'));
+app.use('/api/cart', require('./routes/cartRoutes'));
 app.use('/api/payment', require('./routes/paymentRoutes'));
 app.use('/api/discenti', require('./routes/discenteRoutes'));
 app.use('/api/corsi', require('./routes/courseRoutes'));
