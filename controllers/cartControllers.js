@@ -1,3 +1,4 @@
+const { default: mongoose } = require('mongoose');
 const Cart = require('../models/Cart');
 const Item = require('../models/Kit');
 
@@ -16,9 +17,13 @@ exports.postCartItems = async (req, res) => {
   const { itemId, quantity } = req.body;
 
   try {
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ message: 'User not authenticated' });
+    }
+
     let cart = await Cart.findOne();
     if (!cart) {
-      cart = new Cart({ items: [] });
+      cart = new Cart({ userId: req.user.id, items: [] });
     }
 
     const itemIndex = cart.items.findIndex((i) => i.item.toString() === itemId);
@@ -44,17 +49,21 @@ exports.deleteCartItmes = async (req, res) => {
   const { itemId } = req.params;
 
   try {
-    const cart = await Cart.findOne();
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ message: 'User not authenticated' });
+    }
+    const cart = await Cart.findOne({ userId: req.user.id });
     if (!cart) {
       return res.status(404).json({ message: 'Cart not found' });
     }
-
-    cart.items = cart.items.filter((i) => i.item.toString() !== itemId);
+    const itemObjectId = new mongoose.Types.ObjectId(itemId);
+    cart.items = cart.items.filter(
+      (i) => !i.item.equals(itemObjectId) && !i._id.equals(itemObjectId)
+    );
     await cart.save();
-
-    res.json(cart);
+    res.status(200).json(cart);
   } catch (error) {
+    console.error('Error deleting cart item:', error);
     res.status(500).json({ message: 'Server error', error });
   }
 };
-

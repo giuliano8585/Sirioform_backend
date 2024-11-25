@@ -1,3 +1,4 @@
+const Cart = require('../models/Cart');
 const Kit = require('../models/Kit');
 const Order = require('../models/Order');
 
@@ -7,20 +8,16 @@ const extractProgressiveNumber = (progressiveNumber) => {
 };
 
 const createOrderController = async (req, res) => {
-  console.log('req users: ', req.user);
-  const { productIds, quantities } = req.body;
-  console.log('quantities: ', quantities);
-  console.log('productIds: ', productIds);
+  const { productIds, quantities,fromCart } = req.body;
+  console.log('fromCart: ', fromCart);
 
   try {
     if (!req.user || !req.user.id) {
-      console.log('User information missing during order creation');
       return res.status(400).json({ message: 'User information is missing.' });
     }
 
     for (let quantity of quantities) {
       if (quantity < 6 || quantity % 6 !== 0) {
-        console.log('Quantity must be a multiple of 6 and at least 6.');
         return res
           .status(400)
           .json({
@@ -30,7 +27,6 @@ const createOrderController = async (req, res) => {
     }
 
     const orders = await Order.find();
-    console.log('orders: ', orders);
     let maxProgressiveNumber = 0;
 
     orders.forEach((order) => {
@@ -81,7 +77,6 @@ const createOrderController = async (req, res) => {
       });
       totalPrice += price * quantities[i];
     }
-    console.log('orderItems: ', orderItems);
     
     const newOrder = new Order({
       userId: req.user.id,
@@ -89,9 +84,18 @@ const createOrderController = async (req, res) => {
       totalPrice: totalPrice,
     });
     
-    console.log('newOrder: ', newOrder);
     const savedOrder = await newOrder.save();
-    console.log('Order successfully created:', savedOrder);
+    if (fromCart) {
+      const userCart = await Cart.findOne({ userId: req.user.id }).populate('items');
+      if (userCart) {
+        userCart.items = userCart?.items?.filter(
+          (cartItem) => !productIds?.includes(cartItem?.item?.toString())
+        );
+        await userCart.save();
+        console.log('Cart updated: Items removed after order creation.');
+      }
+    }
+
     res.status(201).json(savedOrder);
   } catch (err) {
     console.log('err: ', err);
