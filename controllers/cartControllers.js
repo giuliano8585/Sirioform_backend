@@ -4,8 +4,10 @@ const Item = require('../models/Kit');
 
 // Get all cart items
 exports.getCartItems = async (req, res) => {
+  console.log('req: ', req.user);
   try {
-    const cart = await Cart.findOne().populate('items.item');
+    const cart = await Cart.findOne({ userId: req.user.id }).populate('items.item');
+    console.log('cart: ', cart);
     res.json(cart || { items: [] });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error });
@@ -13,15 +15,18 @@ exports.getCartItems = async (req, res) => {
 };
 
 // Add an item to the cart
+
 exports.postCartItems = async (req, res) => {
   const { itemId, quantity } = req.body;
+  console.log('req user id: ', req.user.id);
 
   try {
     if (!req.user || !req.user.id) {
       return res.status(401).json({ message: 'User not authenticated' });
     }
 
-    let cart = await Cart.findOne();
+    // Fetch the cart based on the current user's userId
+    let cart = await Cart.findOne({ userId: req.user.id });
     if (!cart) {
       cart = new Cart({ userId: req.user.id, items: [] });
     }
@@ -43,6 +48,7 @@ exports.postCartItems = async (req, res) => {
     res.status(500).json({ message: 'Server error', error });
   }
 };
+
 
 // Delete an item from the cart
 exports.deleteCartItmes = async (req, res) => {
