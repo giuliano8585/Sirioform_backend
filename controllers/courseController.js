@@ -5,6 +5,7 @@ const { createNotification } = require('../utils/notificationService');
 const User = require('../models/User');
 const { default: mongoose } = require('mongoose');
 const Discente = require('../models/Discente');
+const generateCertificate = require('../utils/generateCertificate');
 
 // Funzione per creare un nuovo corso
 const createCourse = async (req, res) => {
@@ -232,45 +233,7 @@ const getAllCourses = async (req, res) => {
   }
 };
 
-// const updateCourseStatus = async (req, res) => {
-//   const { courseId } = req.params;
-//   const { status } = req.body;
-//   try {
-//     if (!['active', 'unactive', 'update','end','complete','finalUpdate'].includes(status)) {
-//       return res.status(400).json({ message: 'Invalid status value' });
-//     }
-//     const updatedCourse = await Course.findByIdAndUpdate(
-//       courseId,
-//       { status },
-//       { new: true }
-//     ).populate('tipologia discente userId');
-//     console.log('updatedCourse: ', updatedCourse);
-//     if (!updatedCourse) {
-//       return res.status(404).json({ message: 'Course not found' });
-//     }
-//     await createNotification(req?.user?.role=='admin'?{
-//       message: `${
-//         updatedCourse?.status == 'update' || updatedCourse?.status=='finalUpdate'
-//           ? `Admin want to update ${updatedCourse?.tipologia?.type} course `
-//           : `The status of your course ${updatedCourse?.tipologia?.type} has changed.`
-//       }`,
-//       senderId: req.user.id,
-//       category: 'general',
-//       receiverId: updatedCourse?.userId,
-//     }:{
-//       message: `${
-//         updatedCourse?.status == 'end' && `${req.user.role == 'center'? updatedCourse?.userId?.name: updatedCourse?.userId?.firstName + ' ' + updatedCourse?.userId?.lastName} want to end the ${updatedCourse?.tipologia?.type} course `
-//       }`,
-//       senderId: req.user.id,
-//       category: 'general',
-//       isAdmin:true
-//     });
-//     res.status(200).json(updatedCourse);
-//   } catch (error) {
-//     console.error('Error updating course status:', error);
-//     res.status(500).json({ message: 'Error updating course status' });
-//   }
-// };
+
 const updateCourseStatus = async (req, res) => {
   const { courseId } = req.params;
   const { status } = req.body;
@@ -327,6 +290,19 @@ const updateCourseStatus = async (req, res) => {
           message: `Each student must have a patent number with type ${course.tipologia.type} before ending the course.`,
         });
       }
+    }
+
+    if (status === 'complete') {
+      const certificates = [];
+      for (const discente of course.discente) {
+        const filePath = await generateCertificate(discente, course);
+        console.log('filePath: ', filePath);
+        certificates.push({
+          discenteId: discente._id,
+          certificatePath: filePath,
+        });
+      }
+      course.certificates = certificates;
     }
 
     // Update the course status
@@ -421,53 +397,6 @@ const removeDiscente = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
-
-// const deleteCourse = async (req, res) => {
-//   const { courseId } = req.params;
-
-//   try {
-//     const deletedCourse = await Course.findByIdAndDelete(courseId);
-
-//     if (!deletedCourse) {
-//       return res.status(404).json({ message: 'Course not found' });
-//     }
-
-//     res.status(200).json({ message: 'Course successfully deleted' });
-//   } catch (error) {
-//     console.error('Error deleting course:', error);
-//     res.status(500).json({ message: 'Error deleting course' });
-//   }
-// };
-
-// const updateCourse = async (req, res) => {
-//   const { courseId } = req.params;
-//   const { città, via, numeroDiscenti, istruttori, direttoriCorso, giornate } =
-//     req.body;
-
-//   try {
-//     // Find the course by ID
-//     const course = await Course.findById(courseId);
-//     if (!course) {
-//       return res.status(404).json({ message: 'Course not found' });
-//     }
-
-//     // Update only the allowed fields
-//     if (città !== undefined) course.città = città;
-//     if (via !== undefined) course.via = via;
-//     if (numeroDiscenti !== undefined) course.numeroDiscenti = numeroDiscenti;
-//     if (istruttori !== undefined) course.istruttore = istruttori; // Adjust key if necessary
-//     if (direttoriCorso !== undefined) course.direttoreCorso = direttoriCorso;
-//     if (giornate !== undefined) course.giornate = giornate;
-
-//     // Save the updated course
-//     const updatedCourse = await course.save();
-
-//     res.status(200).json(updatedCourse);
-//   } catch (error) {
-//     console.error('Error updating course:', error);
-//     res.status(500).json({ message: 'Error updating course' });
-//   }
-// };
 
 const deleteCourse = async (req, res) => {
   const { courseId } = req.params;
@@ -708,6 +637,31 @@ const addCourseQuantity = async (req, res) => {
   }
 };
 
+const sendCertificateToDiscente = async (req, res) => {
+  const { courseId, discenteId } = req.params;
+
+  try {
+    const course = await Course.findById(courseId);
+    if (!course) {
+      return res.status(404).json({ message: 'Course not found' });
+    }
+
+    const certificate = course.certificates.find((cert) => cert.discenteId.toString() === discenteId);
+    if (!certificate) {
+      return res.status(404).json({ message: 'Certificate not found for this discente' });
+    }
+
+    const filePath = path.join(__dirname, '..', certificate.certificatePath);
+
+    // Send the certificate file to the user
+    res.download(filePath, `${discenteId}-certificate.pdf`);
+  } catch (error) {
+    console.error('Error sending certificate:', error);
+    res.status(500).json({ message: 'Error sending certificate' });
+  }
+};
+
+
 
 module.exports = {
   createCourse,
@@ -722,4 +676,5 @@ module.exports = {
   getSingleCourseById,
   getCoursesByDiscenteId,
   addCourseQuantity,
+  sendCertificateToDiscente,
 };

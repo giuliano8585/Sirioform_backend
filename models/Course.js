@@ -39,6 +39,12 @@ const courseSchema = new mongoose.Schema({
   discente: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Discente' }], 
   progressiveNumber: { type: String }, 
   status: { type: String, enum: ['active', 'unactive','update','end','complete','finalUpdate'], default: 'unactive' },
+  certificates: [
+    {
+      discenteId: { type: mongoose.Schema.Types.ObjectId, ref: 'Discente' },
+      certificatePath: { type: String },
+    },
+  ],
 }, {
   timestamps: true 
 });
