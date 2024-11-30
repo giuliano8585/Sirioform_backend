@@ -6,6 +6,7 @@ const User = require('../models/User');
 const { default: mongoose } = require('mongoose');
 const Discente = require('../models/Discente');
 const generateCertificate = require('../utils/generateCertificate');
+const sendEmail = require('../utils/emailService');
 
 // Funzione per creare un nuovo corso
 const createCourse = async (req, res) => {
@@ -233,7 +234,6 @@ const getAllCourses = async (req, res) => {
   }
 };
 
-
 const updateCourseStatus = async (req, res) => {
   const { courseId } = req.params;
   const { status } = req.body;
@@ -459,8 +459,15 @@ const deleteCourse = async (req, res) => {
 
 const updateCourse = async (req, res) => {
   const { courseId } = req.params;
-  const { città, via,presso, numeroDiscenti, istruttori, direttoriCorso, giornate } =
-    req.body;
+  const {
+    città,
+    via,
+    presso,
+    numeroDiscenti,
+    istruttori,
+    direttoriCorso,
+    giornate,
+  } = req.body;
 
   try {
     // Find the course by ID
@@ -646,9 +653,13 @@ const sendCertificateToDiscente = async (req, res) => {
       return res.status(404).json({ message: 'Course not found' });
     }
 
-    const certificate = course.certificates.find((cert) => cert.discenteId.toString() === discenteId);
+    const certificate = course.certificates.find(
+      (cert) => cert.discenteId.toString() === discenteId
+    );
     if (!certificate) {
-      return res.status(404).json({ message: 'Certificate not found for this discente' });
+      return res
+        .status(404)
+        .json({ message: 'Certificate not found for this discente' });
     }
 
     const filePath = path.join(__dirname, '..', certificate.certificatePath);
@@ -661,7 +672,43 @@ const sendCertificateToDiscente = async (req, res) => {
   }
 };
 
+const sendCertificate =async (req, res) => {
+  const { courseId, recipients, subject, message } = req.body;
 
+  try {
+    // Find the course and its discenti
+    const course = await Course.findById(courseId).populate('discente');
+    if (!course) {
+      return res.status(404).json({ message: 'Course not found' });
+    }
+
+    // Determine recipients
+    let recipientEmails = [];
+    if (recipients === 'all') {
+      // Get all emails of discenti
+      recipientEmails = course.discente.map(d => d.email);
+    } else if (Array.isArray(recipients)) {
+      // Validate and include only specific discenti emails
+      recipientEmails = course.discente
+        .filter(d => recipients.includes(d._id.toString()))
+        .map(d => d.email);
+    }
+
+    if (recipientEmails.length === 0) {
+      return res.status(400).json({ message: 'No valid recipients found' });
+    }
+
+    // Send emails
+    recipientEmails.forEach(email => {
+      sendEmail(email, subject, message);
+    });
+
+    res.status(200).json({ message: 'Emails sent successfully' });
+  } catch (error) {
+    console.error('Error sending emails:', error);
+    res.status(500).json({ message: 'Internal server error', error: error.message });
+  }
+}
 
 module.exports = {
   createCourse,
@@ -677,4 +724,5 @@ module.exports = {
   getCoursesByDiscenteId,
   addCourseQuantity,
   sendCertificateToDiscente,
+  sendCertificate,
 };

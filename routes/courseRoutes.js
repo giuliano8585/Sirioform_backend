@@ -13,6 +13,7 @@ const {
   getCoursesByDiscenteId,
   addCourseQuantity,
   sendCertificateToDiscente,
+  sendCertificate,
 } = require('../controllers/courseController');
 const auth = require('../middleware/auth');
 const isAdmin = require('../middleware/isAdmin');
@@ -43,6 +44,7 @@ router.patch('/courses/add-quatity/:courseId',auth, addCourseQuantity);
 router.delete('/courses/:courseId', deleteCourse);
 
 router.get('/courses/:courseId/certificates/:discenteId', sendCertificateToDiscente);
+router.get('/courses/:courseId/send-email', sendCertificate);
 
 
 module.exports = router;
