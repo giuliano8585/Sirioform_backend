@@ -44,7 +44,7 @@ router.patch('/courses/add-quatity/:courseId',auth, addCourseQuantity);
 router.delete('/courses/:courseId', deleteCourse);
 
 router.get('/courses/:courseId/certificates/:discenteId', sendCertificateToDiscente);
-router.get('/courses/:courseId/send-email', sendCertificate);
+router.post('/courses/:courseId/send-email', sendCertificate);
 
 
 module.exports = router;
