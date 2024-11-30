@@ -7,6 +7,7 @@ const { default: mongoose } = require('mongoose');
 const Discente = require('../models/Discente');
 const generateCertificate = require('../utils/generateCertificate');
 const sendEmail = require('../utils/emailService');
+const path = require('path');
 
 // Funzione per creare un nuovo corso
 const createCourse = async (req, res) => {
@@ -672,43 +673,114 @@ const sendCertificateToDiscente = async (req, res) => {
   }
 };
 
-const sendCertificate =async (req, res) => {
+// const sendCertificate =async (req, res) => {
+//   const { courseId, recipients, subject, message } = req.body;
+
+//   try {
+//     // Find the course and its discenti
+//     const course = await Course.findById(courseId).populate('discente');
+//     if (!course) {
+//       return res.status(404).json({ message: 'Course not found' });
+//     }
+
+//     // Determine recipients
+//     let recipientEmails = [];
+//     if (recipients === 'all') {
+//       // Get all emails of discenti
+//       recipientEmails = course.discente.map(d => d.email);
+//     } else if (Array.isArray(recipients)) {
+//       // Validate and include only specific discenti emails
+//       recipientEmails = course.discente
+//         .filter(d => recipients.includes(d._id.toString()))
+//         .map(d => d.email);
+//     }
+
+//     if (recipientEmails.length === 0) {
+//       return res.status(400).json({ message: 'No valid recipients found' });
+//     }
+
+//     // Send emails
+//     recipientEmails.forEach(email => {
+//       sendEmail(email, subject, message);
+//     });
+
+//     res.status(200).json({ message: 'Emails sent successfully' });
+//   } catch (error) {
+//     console.error('Error sending emails:', error);
+//     res.status(500).json({ message: 'Internal server error', error: error.message });
+//   }
+// }
+
+const sendCertificate = async (req, res) => {
   const { courseId, recipients, subject, message } = req.body;
 
   try {
-    // Find the course and its discenti
+    // Find the course and populate certificates and discenti
     const course = await Course.findById(courseId).populate('discente');
     if (!course) {
       return res.status(404).json({ message: 'Course not found' });
     }
 
     // Determine recipients
-    let recipientEmails = [];
+    let selectedDiscenti = [];
     if (recipients === 'all') {
-      // Get all emails of discenti
-      recipientEmails = course.discente.map(d => d.email);
+      selectedDiscenti = course.discente; // All discenti
     } else if (Array.isArray(recipients)) {
-      // Validate and include only specific discenti emails
-      recipientEmails = course.discente
-        .filter(d => recipients.includes(d._id.toString()))
-        .map(d => d.email);
+      selectedDiscenti = course.discente.filter(d =>
+        recipients.includes(d._id.toString())
+      );
     }
 
-    if (recipientEmails.length === 0) {
+    if (selectedDiscenti.length === 0) {
       return res.status(400).json({ message: 'No valid recipients found' });
     }
 
-    // Send emails
-    recipientEmails.forEach(email => {
-      sendEmail(email, subject, message);
-    });
+    // Loop through selected discenti
+    for (const discente of selectedDiscenti) {
+      // Find the correct certificate for this course and this discente
+      const certificate = course.certificates.find(
+        cert =>
+          cert.discenteId.toString() === discente._id.toString() &&
+          cert.courseId.toString() === courseId // Match by course ID
+      );
 
-    res.status(200).json({ message: 'Emails sent successfully' });
+      if (certificate) {
+        const certificatePath = path.join(
+          __dirname,
+          '..',
+          'uploads',
+          'certificate',
+          certificate.certificatePath
+        );
+        const certificateLink = `${req.protocol}://${req.get(
+          'host'
+        )}/uploads/certificate/${certificate.certificatePath}`;
+
+        // Send email with the attachment and link
+        await sendEmail({
+          to: discente.email,
+          subject:"Certificate of completion",
+          text: `${message}\n\nDownload your certificate here: ${certificateLink}`,
+          attachments: [
+            {
+              filename: path.basename(certificatePath),
+              path: certificatePath, // Absolute path of the certificate
+            },
+          ],
+        });
+      } else {
+        console.warn(
+          `No certificate found for discente ${discente._id} in course ${courseId}`
+        );
+      }
+    }
+
+    res.status(200).json({ message: 'Certificates sent successfully' });
   } catch (error) {
-    console.error('Error sending emails:', error);
+    console.error('Error sending certificates:', error);
     res.status(500).json({ message: 'Internal server error', error: error.message });
   }
-}
+};
 
 module.exports = {
   createCourse,
