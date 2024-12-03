@@ -33,13 +33,13 @@ exports.postCartItems = async (req, res) => {
 
     const itemIndex = cart.items.findIndex((i) => i.item.toString() === itemId);
     if (itemIndex > -1) {
-      cart.items[itemIndex].quantity += quantity || 1;
+      cart.items[itemIndex].quantity += quantity || 6;
     } else {
       const itemExists = await Item.findById(itemId);
       if (!itemExists) {
         return res.status(404).json({ message: 'Item not found' });
       }
-      cart.items.push({ item: itemId, quantity: quantity || 1 });
+      cart.items.push({ item: itemId, quantity: quantity || 6 });
     }
 
     await cart.save();
