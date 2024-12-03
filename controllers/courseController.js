@@ -740,8 +740,8 @@ const sendCertificate = async (req, res) => {
       // Find the correct certificate for this course and this discente
       const certificate = course.certificates.find(
         cert =>
-          cert.discenteId.toString() === discente._id.toString() &&
-          cert.courseId.toString() === courseId // Match by course ID
+          cert?.discenteId?.toString() === discente?._id?.toString() &&
+          cert?.courseId?.toString() === courseId // Match by course ID
       );
 
       if (certificate) {
