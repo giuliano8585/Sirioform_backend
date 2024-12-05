@@ -559,6 +559,8 @@ const updateCourse = async (req, res) => {
     res.status(500).json({ message: 'Error updating course' });
   }
 };
+
+
 const addCourseQuantity = async (req, res) => {
   const { courseId } = req.params;
   const { numeroDiscenti } = req.body;
@@ -589,12 +591,15 @@ const addCourseQuantity = async (req, res) => {
         }
       });
     });
+    console.log('totalAvailableQuantity: ', totalAvailableQuantity);
 
     // Calculate the current kits used in the course
     const currentUsedKits = course.numeroDiscenti;
+    console.log('currentUsedKits: ', currentUsedKits);
 
     // Calculate the difference to check if quantity can be increased
-    const difference = numeroDiscenti - currentUsedKits;
+    const difference = numeroDiscenti;
+    console.log('difference: ', difference);
     if (difference <= 0) {
       return res
         .status(400)
@@ -609,7 +614,7 @@ const addCourseQuantity = async (req, res) => {
     }
 
     // Update numeroDiscenti
-    course.numeroDiscenti = numeroDiscenti;
+    course.numeroDiscenti += Number(numeroDiscenti);
 
     // Deduct the added quantity from user orders
     let remainingDifference = difference;
@@ -644,6 +649,7 @@ const addCourseQuantity = async (req, res) => {
     res.status(500).json({ message: 'Error updating course quantity' });
   }
 };
+
 
 const sendCertificateToDiscente = async (req, res) => {
   const { courseId, discenteId } = req.params;
