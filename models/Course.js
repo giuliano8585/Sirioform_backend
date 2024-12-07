@@ -12,6 +12,10 @@ const progressiveCounterSchema = new mongoose.Schema({
 });
 const ProgressiveCounter = mongoose.model('ProgressiveCounter', progressiveCounterSchema);
 const generateProgressiveNumber = async (course) => {
+  const populatedCourse = await mongoose.model('Kit').findById(course?.tipologia).lean();
+  const creator = await mongoose.model('User').findById(course.userId).lean();
+  const creatorName = creator && creator?.role=='center' ? creator.name|| 'Unknown': creator.lastName || 'Unknown'; 
+  const courseType = populatedCourse?.type || 'Unknown';
   const datePart = course.giornate[0]?.dataInizio.toISOString().split('T')[0];
   let counterDoc = await ProgressiveCounter.findOne();
   if (!counterDoc) {
@@ -21,7 +25,7 @@ const generateProgressiveNumber = async (course) => {
   }
   await counterDoc.save();
   const counterStr = counterDoc.counter.toString().padStart(5, '0');
-  return `${course.tipologia}-${datePart}-${counterStr}`;
+  return `${creatorName}-${courseType}-${datePart}-${counterStr}`;
 };
 
 
