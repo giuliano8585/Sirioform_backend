@@ -3,11 +3,16 @@ const mongoose = require('mongoose');
 const connectDB = require('./config/db');
 const cors = require('cors');
 const bodyParser = require('body-parser');
+const path = require('path');
 
 require('dotenv').config();
 
 connectDB();
 const app = express();
+
+const _dirname = path.dirname('');
+const buildpath = path.join(_dirname, '../frontend/build');
+app.use(express.static(buildpath));
 app.use('/uploads', express.static('uploads'));
 app.use(cors());
 app.use(bodyParser.json());
