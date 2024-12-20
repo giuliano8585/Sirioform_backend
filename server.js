@@ -11,7 +11,7 @@ connectDB();
 const app = express();
 
 const _dirname = path.dirname('');
-const buildpath = path.join(_dirname, '../frontend/build');
+const buildpath = path.join(_dirname, '../Sirioform_frontend/build');
 app.use(express.static(buildpath));
 app.use('/uploads', express.static('uploads'));
 app.use(cors());
@@ -31,6 +31,10 @@ app.use('/api/payment', require('./routes/paymentRoutes'));
 app.use('/api/discenti', require('./routes/discenteRoutes'));
 app.use('/api/corsi', require('./routes/courseRoutes'));
 app.use('/api/notifications', require('./routes/notificationRoutes'));
+
+app.get('*', (req, res) => {
+  res.sendFile(path.resolve(_dirname, '../frontend/build', 'index.html'));
+});
 
 const PORT = process.env.PORT || 5000;
 
