@@ -13,7 +13,15 @@ exports.registerInstructor = async (req, res) => {
   if (password !== repeatPassword) {
     return res.status(400).json({ error: 'Passwords do not match' });
   }
-
+  const today = new Date();
+  for (const qualification of qualifications) {
+    const expirationDate = new Date(qualification.expirationDate);
+    if (expirationDate < today) {
+      return res.status(400).json({ 
+        error: `Qualification '${qualification.name}' has an expiration date earlier than today.` 
+      });
+    }
+  }
   // Verifica reCAPTCHA
   const secretKey = process.env.RECAPTCHA_SECRET_KEY;
   const response = await axios.post(`https://www.google.com/recaptcha/api/siteverify?secret=${secretKey}&response=${recaptchaToken}`);

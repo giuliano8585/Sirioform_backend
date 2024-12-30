@@ -26,14 +26,20 @@ app.use('/api/kits', require('./routes/kits'));
 app.use('/api/sanitarios', require('./routes/sanitarios'));
 
 app.use('/api/orders', require('./routes/orderRoutes'));
+app.use('/api/communication', require('./routes/communicationRoutes'));
+app.use('/api/document', require('./routes/documentRoutes'));
 app.use('/api/cart', require('./routes/cartRoutes'));
 app.use('/api/payment', require('./routes/paymentRoutes'));
 app.use('/api/discenti', require('./routes/discenteRoutes'));
 app.use('/api/corsi', require('./routes/courseRoutes'));
 app.use('/api/notifications', require('./routes/notificationRoutes'));
 
+app.get('*', (req, res) => {
+  res.sendFile(path.resolve(_dirname, '../frontend/build', 'index.html'));
+});
+
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server is running on port ${PORT}`);
 });
