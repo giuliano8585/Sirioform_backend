@@ -24,14 +24,14 @@ exports.registerCenter = async (req, res) => {
   }
 
   // Verifica reCAPTCHA
-  const secretKey = process.env.RECAPTCHA_SECRET_KEY;
-  const response = await axios.post(
-    `https://www.google.com/recaptcha/api/siteverify?secret=${secretKey}&response=${recaptchaToken}`
-  );
+  // const secretKey = process.env.RECAPTCHA_SECRET_KEY;
+  // const response = await axios.post(
+  //   `https://www.google.com/recaptcha/api/siteverify?secret=${secretKey}&response=${recaptchaToken}`
+  // );
 
-  if (!response.data.success) {
-    return res.status(400).json({ error: 'reCAPTCHA validation failed' });
-  }
+  // if (!response.data.success) {
+  //   return res.status(400).json({ error: 'reCAPTCHA validation failed' });
+  // }
 
   try {
     const existingCenter = await User.findOne({ username });
