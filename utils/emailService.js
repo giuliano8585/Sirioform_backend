@@ -2,16 +2,18 @@ const nodemailer = require('nodemailer');
 require('dotenv').config();
 
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: 'smtp.sendgrid.net',
+  port:587,
+  secure: false,
   auth: {
-    user: process.env.GMAIL_USER, 
+    user: 'apikey', 
     pass: process.env.GMAIL_APP_PASSWORD,
   },
 });
 
 const sendEmail = (to, subject, text) => {
   const mailOptions = {
-    from: 'Sirioform <sirioform@gmail.com>',
+    from: 'ijazafridi.dev@gmail.com',
     to: to, 
     subject: subject,
     text: text, 
