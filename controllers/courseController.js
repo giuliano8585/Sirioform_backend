@@ -16,6 +16,8 @@ const createCourse = async (req, res) => {
     città,
     via,
     presso,
+    provincia,
+    zipcode,
     numeroDiscenti,
     istruttori,
     direttoriCorso,
@@ -58,6 +60,8 @@ const createCourse = async (req, res) => {
       città,
       via,
       presso,
+      provincia,
+      zipcode,
       numeroDiscenti,
       istruttore: istruttori,
       direttoreCorso: direttoriCorso,
@@ -264,28 +268,67 @@ const updateCourseStatus = async (req, res) => {
 
     // Check patent number for each discente if status is 'end'
 
-    if (status === 'end') {
-      const order = await Order.findOne({
-        'orderItems.productId': course?.tipologia?._id,
-      }).populate('orderItems.productId');
+    // if (status === 'end') {
+    //   const order = await Order.findOne({
+    //     'orderItems.productId': course?.tipologia?._id,
+    //   }).populate('orderItems.productId');
+    //   console.log('order: ', order);
 
-      if (!order) {
+    //   if (!order) {
+    //     return res.status(404).json({
+    //       message: 'Kit non trovato per il numero di patente fornito',
+    //     });
+    //   }
+
+    //   const allProgressiveNumbers = order.orderItems
+    //   .map((item) => item.progressiveNumbers)
+    //   .flat();
+      
+    //   console.log('allProgressiveNumbers: ', allProgressiveNumbers);
+    //   // Ensure every `discente` has at least one matching patent number in `allProgressiveNumbers`
+    //   const allDiscentesHaveMatch = course?.discente?.every((discente) =>
+    //     discente?.patentNumber?.some((patentNumber) =>
+    //       allProgressiveNumbers?.includes(patentNumber)
+    //     )
+    //   );
+    //   console.log('course: ', course?.discente);
+    //   console.log('allDiscentesHaveMatch: ', allDiscentesHaveMatch);
+
+    //   if (!allDiscentesHaveMatch) {
+    //     return res.status(400).json({
+    //       message: `Each student must have a patent number with type ${course.tipologia.type} before ending the course.`,
+    //     });
+    //   }
+    // }
+
+    if (status === 'end') {
+      // Find all orders that have the course's tipologia in their order items
+      const orders = await Order.find({
+        'orderItems.productId': course?.tipologia?._id,
+        userId: course.userId, // Ensure the order belongs to the course's user
+      }).populate('orderItems.productId');
+    
+      if (!orders.length) {
         return res.status(404).json({
           message: 'Kit non trovato per il numero di patente fornito',
         });
       }
-
-      const allProgressiveNumbers = order.orderItems
-        .map((item) => item.progressiveNumbers)
-        .flat();
-
-      // Ensure every `discente` has at least one matching patent number in `allProgressiveNumbers`
-      const allDiscentesHaveMatch = course.discente.every((discente) =>
-        discente.patentNumber.some((patentNumber) =>
-          allProgressiveNumbers.includes(patentNumber)
+    
+      // Collect all progressiveNumbers from all relevant order items
+      const allProgressiveNumbers = orders
+        .flatMap(order => order.orderItems)
+        .filter(item => item.productId._id.toString() === course.tipologia._id.toString())
+        .flatMap(item => item.progressiveNumbers);
+    
+      console.log('allProgressiveNumbers: ', allProgressiveNumbers);
+    
+      // Check if every student has at least one patent number in the aggregated list
+      const allDiscentesHaveMatch = course.discente.every(discente =>
+        discente.patentNumber.some(patentNum =>
+          allProgressiveNumbers.includes(patentNum)
         )
       );
-
+    
       if (!allDiscentesHaveMatch) {
         return res.status(400).json({
           message: `Each student must have a patent number with type ${course.tipologia.type} before ending the course.`,
@@ -464,6 +507,8 @@ const updateCourse = async (req, res) => {
     città,
     via,
     presso,
+    provincia,
+    zipcode,
     numeroDiscenti,
     istruttori,
     direttoriCorso,
@@ -535,6 +580,8 @@ const updateCourse = async (req, res) => {
     if (città !== undefined) course.città = città;
     if (via !== undefined) course.via = via;
     if (presso !== undefined) course.presso = presso;
+    if (provincia !== undefined) course.provincia = provincia;
+    if (zipcode !== undefined) course.zipcode = zipcode;
     if (istruttori !== undefined) course.istruttore = istruttori;
     if (direttoriCorso !== undefined) course.direttoreCorso = direttoriCorso;
     if (giornate !== undefined) course.giornate = giornate;
@@ -559,7 +606,6 @@ const updateCourse = async (req, res) => {
     res.status(500).json({ message: 'Error updating course' });
   }
 };
-
 
 const addCourseQuantity = async (req, res) => {
   const { courseId } = req.params;
@@ -650,7 +696,6 @@ const addCourseQuantity = async (req, res) => {
   }
 };
 
-
 const sendCertificateToDiscente = async (req, res) => {
   const { courseId, discenteId } = req.params;
 
@@ -732,7 +777,7 @@ const sendCertificate = async (req, res) => {
     if (recipients === 'all') {
       selectedDiscenti = course.discente; // All discenti
     } else if (Array.isArray(recipients)) {
-      selectedDiscenti = course.discente.filter(d =>
+      selectedDiscenti = course.discente.filter((d) =>
         recipients.includes(d._id.toString())
       );
     }
@@ -745,7 +790,7 @@ const sendCertificate = async (req, res) => {
     for (const discente of selectedDiscenti) {
       // Find the correct certificate for this course and this discente
       const certificate = course.certificates.find(
-        cert =>
+        (cert) =>
           cert?.discenteId?.toString() === discente?._id?.toString() &&
           cert?.courseId?.toString() === courseId // Match by course ID
       );
@@ -765,7 +810,7 @@ const sendCertificate = async (req, res) => {
         // Send email with the attachment and link
         await sendEmail({
           to: discente.email,
-          subject:"Certificate of completion",
+          subject: 'Certificate of completion',
           text: `${message}\n\nDownload your certificate here: ${certificateLink}`,
           attachments: [
             {
@@ -784,7 +829,9 @@ const sendCertificate = async (req, res) => {
     res.status(200).json({ message: 'Certificates sent successfully' });
   } catch (error) {
     console.error('Error sending certificates:', error);
-    res.status(500).json({ message: 'Internal server error', error: error.message });
+    res
+      .status(500)
+      .json({ message: 'Internal server error', error: error.message });
   }
 };
 

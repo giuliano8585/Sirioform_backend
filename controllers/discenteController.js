@@ -13,6 +13,14 @@ const createDiscente = async (req, res) => {
     email,
     telefono,
     patentNumber,
+    dateOfBirth,
+    placeOfBirth,
+    province,
+    residenceIn,
+    street,
+    number,
+    zipCode,
+    gender,
   } = req.body;
   console.log('user id', req?.user);
   try {
@@ -26,6 +34,14 @@ const createDiscente = async (req, res) => {
       email,
       telefono,
       patentNumber: patentNumber == null ? [] : patentNumber,
+      dateOfBirth,
+      placeOfBirth,
+      province,
+      residenceIn,
+      street,
+      number,
+      zipCode,
+      gender,
       userId: req.user.id,
     });
     await newDiscente.save();
