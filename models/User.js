@@ -9,7 +9,7 @@ const QualificationSchema = new Schema({
 const UserSchema = new Schema({
   username: { type: String, required: true, unique: true },
   password: { type: String, required: true },
-  role: { type: String, required: true, enum: ['admin', 'center', 'instructor'] },
+  role: { type: String, required: true, enum: ['admin', 'center', 'instructor', 'sirioform'] },
   // Fields for all users
   email: { type: String,required:true,unique:true },
   phone: { type: String },

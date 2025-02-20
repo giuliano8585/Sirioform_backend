@@ -20,6 +20,7 @@ app.use(bodyParser.json());
 // Routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/centers', require('./routes/centers'));
+app.use('/api/sirioform', require('./routes/sirioformRoutes'));
 app.use('/api/instructors', require('./routes/instructors'));
 app.use('/api', require('./routes/protected'));
 app.use('/api/kits', require('./routes/kits'));

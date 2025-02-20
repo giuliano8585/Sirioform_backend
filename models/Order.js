@@ -9,20 +9,20 @@ const orderSchema = new Schema({
       totalQuantity: { type: Number, required: true },
       quantity: { type: Number, required: true },
       price: { type: Number, required: true },
-      progressiveNumbers: { type: [String], required: true }
-    }
+      progressiveNumbers: { type: [String], required: true },
+    },
   ],
   totalPrice: { type: Number, required: true },
-  createdAt: { type: Date, default: Date.now }
+  createdAt: { type: Date, default: Date.now },
 });
 
-orderSchema.methods.getOrderDetails = function() {
-  console.log("Getting order details for order ID:", this._id);
+orderSchema.methods.getOrderDetails = function () {
+  console.log('Getting order details for order ID:', this._id);
   return {
-   userId: this.userId,
+    userId: this.userId,
     orderItems: this.orderItems,
     totalPrice: this.totalPrice,
-    createdAt: this.createdAt
+    createdAt: this.createdAt,
   };
 };
 
