@@ -14,9 +14,11 @@ const {
   addCourseQuantity,
   sendCertificateToDiscente,
   sendCertificate,
+  uploadReportDocument,
 } = require('../controllers/courseController');
 const auth = require('../middleware/auth');
 const isAdmin = require('../middleware/isAdmin');
+const uploadDocument = require('../middleware/uploadDocument');
 
 const router = express.Router();
 
@@ -31,7 +33,7 @@ router.get('/discente-courses/:id', auth, getCoursesByDiscenteId);
 router.get('/user-course/:id', auth, getSingleCourseById);
 
 router.get('/', auth, isAdmin, getAllCourses);
-
+router.post('/courses/:courseId/upload-report', uploadDocument.single('reportDocument'), uploadReportDocument);
 router.patch('/courses/:courseId/status', auth, updateCourseStatus);
 
 router.patch('/assign-discente', assignDescente);
