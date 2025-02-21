@@ -239,6 +239,32 @@ const getAllCourses = async (req, res) => {
   }
 };
 
+const uploadReportDocument = async (req, res) => {
+  const { courseId } = req.params;
+  const file = req.file;
+
+  if (!file) {
+    return res.status(400).json({ message: 'No file uploaded' });
+  }
+
+  try {
+    const course = await Course.findById(courseId);
+    if (!course) {
+      return res.status(404).json({ message: 'Course not found' });
+    }
+
+    course.reportDocument = file.path; 
+    await course.save();
+
+    res
+      .status(200)
+      .json({ message: 'Report document uploaded successfully', course });
+  } catch (error) {
+    console.error('Error uploading report document:', error);
+    res.status(500).json({ message: 'Error uploading report document' });
+  }
+};
+
 const updateCourseStatus = async (req, res) => {
   const { courseId } = req.params;
   const { status } = req.body;
@@ -266,69 +292,44 @@ const updateCourseStatus = async (req, res) => {
     }
     console.log('course: ', course);
 
-    // Check patent number for each discente if status is 'end'
-
-    // if (status === 'end') {
-    //   const order = await Order.findOne({
-    //     'orderItems.productId': course?.tipologia?._id,
-    //   }).populate('orderItems.productId');
-    //   console.log('order: ', order);
-
-    //   if (!order) {
-    //     return res.status(404).json({
-    //       message: 'Kit non trovato per il numero di patente fornito',
-    //     });
-    //   }
-
-    //   const allProgressiveNumbers = order.orderItems
-    //   .map((item) => item.progressiveNumbers)
-    //   .flat();
-      
-    //   console.log('allProgressiveNumbers: ', allProgressiveNumbers);
-    //   // Ensure every `discente` has at least one matching patent number in `allProgressiveNumbers`
-    //   const allDiscentesHaveMatch = course?.discente?.every((discente) =>
-    //     discente?.patentNumber?.some((patentNumber) =>
-    //       allProgressiveNumbers?.includes(patentNumber)
-    //     )
-    //   );
-    //   console.log('course: ', course?.discente);
-    //   console.log('allDiscentesHaveMatch: ', allDiscentesHaveMatch);
-
-    //   if (!allDiscentesHaveMatch) {
-    //     return res.status(400).json({
-    //       message: `Each student must have a patent number with type ${course.tipologia.type} before ending the course.`,
-    //     });
-    //   }
-    // }
-
     if (status === 'end') {
+      if (!course.reportDocument) {
+        return res
+          .status(400)
+          .json({
+            message: 'Report document is required before ending the course',
+          });
+      }
       // Find all orders that have the course's tipologia in their order items
       const orders = await Order.find({
         'orderItems.productId': course?.tipologia?._id,
         userId: course.userId, // Ensure the order belongs to the course's user
       }).populate('orderItems.productId');
-    
+
       if (!orders.length) {
         return res.status(404).json({
           message: 'Kit non trovato per il numero di patente fornito',
         });
       }
-    
+
       // Collect all progressiveNumbers from all relevant order items
       const allProgressiveNumbers = orders
-        .flatMap(order => order.orderItems)
-        .filter(item => item.productId._id.toString() === course.tipologia._id.toString())
-        .flatMap(item => item.progressiveNumbers);
-    
+        .flatMap((order) => order.orderItems)
+        .filter(
+          (item) =>
+            item.productId._id.toString() === course.tipologia._id.toString()
+        )
+        .flatMap((item) => item.progressiveNumbers);
+
       console.log('allProgressiveNumbers: ', allProgressiveNumbers);
-    
+
       // Check if every student has at least one patent number in the aggregated list
-      const allDiscentesHaveMatch = course.discente.every(discente =>
-        discente.patentNumber.some(patentNum =>
+      const allDiscentesHaveMatch = course.discente.every((discente) =>
+        discente.patentNumber.some((patentNum) =>
           allProgressiveNumbers.includes(patentNum)
         )
       );
-    
+
       if (!allDiscentesHaveMatch) {
         return res.status(400).json({
           message: `Each student must have a patent number with type ${course.tipologia.type} before ending the course.`,
@@ -850,4 +851,5 @@ module.exports = {
   addCourseQuantity,
   sendCertificateToDiscente,
   sendCertificate,
+  uploadReportDocument,
 };
