@@ -5,10 +5,27 @@ const User = require('../models/User');
 const { createNotification } = require('../utils/notificationService');
 
 exports.registerInstructor = async (req, res) => {
-  const { 
-    firstName, lastName, fiscalCode, brevetNumber, qualifications,
-    piva, address, city, region, email, phone, username, password, repeatPassword, recaptchaToken 
+  console.log('req.file: ', req.file);
+  const resumeUrl = req.files && req.files.resumeUrl && req.files.resumeUrl[0] ? `/uploads/${req.files.resumeUrl[0].filename}` : '';
+  const {
+    firstName,
+    lastName,
+    fiscalCode,
+    brevetNumber,
+    qualifications,
+    piva,
+    address,
+    city,
+    region,
+    email,
+    phone,
+    username,
+    password,
+    repeatPassword,
+    recaptchaToken,
   } = req.body;
+
+  console.log('resumeUrl: ', resumeUrl);
 
   if (password !== repeatPassword) {
     return res.status(400).json({ error: 'Passwords do not match' });
@@ -17,14 +34,16 @@ exports.registerInstructor = async (req, res) => {
   for (const qualification of qualifications) {
     const expirationDate = new Date(qualification.expirationDate);
     if (expirationDate < today) {
-      return res.status(400).json({ 
-        error: `Qualification '${qualification.name}' has an expiration date earlier than today.` 
+      return res.status(400).json({
+        error: `Qualification '${qualification.name}' has an expiration date earlier than today.`,
       });
     }
   }
   // Verifica reCAPTCHA
   const secretKey = process.env.RECAPTCHA_SECRET_KEY;
-  const response = await axios.post(`https://www.google.com/recaptcha/api/siteverify?secret=${secretKey}&response=${recaptchaToken}`);
+  const response = await axios.post(
+    `https://www.google.com/recaptcha/api/siteverify?secret=${secretKey}&response=${recaptchaToken}`
+  );
 
   if (!response.data.success) {
     return res.status(400).json({ error: 'reCAPTCHA validation failed' });
@@ -39,9 +58,9 @@ exports.registerInstructor = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    const formattedQualifications = qualifications.map(q => ({
+    const formattedQualifications = qualifications.map((q) => ({
       name: q.name,
-      expirationDate: new Date(q.expirationDate)
+      expirationDate: new Date(q.expirationDate),
     }));
 
     const newInstructor = new User({
@@ -60,19 +79,24 @@ exports.registerInstructor = async (req, res) => {
       password: hashedPassword,
       isActive: false,
       role: 'instructor',
-      sanitarios: []
+      resumeUrl,
+      sanitarios: [],
     });
 
     await newInstructor.save();
 
     // Invia email di conferma
-    sendEmail(email, 'Registrazione Istruttore', 'Grazie per esserti registrato! Il tuo account è in attesa di approvazione.');
+    sendEmail(
+      email,
+      'Registrazione Istruttore',
+      'Grazie per esserti registrato! Il tuo account è in attesa di approvazione.'
+    );
 
     await createNotification({
       message: `New Instructor Registered`,
       senderId: null,
-      category:'instructorAccount',
-      userName:newInstructor?.firstName+" "+newInstructor?.lastName,
+      category: 'instructorAccount',
+      userName: newInstructor?.firstName + ' ' + newInstructor?.lastName,
       isAdmin: true,
     });
 
@@ -82,17 +106,21 @@ exports.registerInstructor = async (req, res) => {
   }
 };
 
-
 exports.updateInstructor = async (req, res) => {
-  const  userId  = req.params.id;
+  const userId = req.params.id;
   console.log('userId: ', userId);
-  const role = req.user?.role; 
+  const role = req.user?.role;
 
   const updates = req.body;
 
   if (role === 'center') {
-    const restrictedFields = ['firstName', 'lastName', 'brevetNumber', 'fiscalCode'];
-        restrictedFields.forEach(field => {
+    const restrictedFields = [
+      'firstName',
+      'lastName',
+      'brevetNumber',
+      'fiscalCode',
+    ];
+    restrictedFields.forEach((field) => {
       if (updates.hasOwnProperty(field)) {
         delete updates[field];
       }
@@ -100,7 +128,10 @@ exports.updateInstructor = async (req, res) => {
   }
 
   try {
-    const user = await User.findByIdAndUpdate(userId, updates, { new: true, runValidators: true });
+    const user = await User.findByIdAndUpdate(userId, updates, {
+      new: true,
+      runValidators: true,
+    });
 
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
@@ -112,7 +143,6 @@ exports.updateInstructor = async (req, res) => {
   }
 };
 
-
 exports.getUnapprovedInstructors = async (req, res) => {
   try {
     const instructors = await User.find({ isActive: false });
@@ -122,14 +152,20 @@ exports.getUnapprovedInstructors = async (req, res) => {
   }
 };
 
-
-
 exports.approveInstructor = async (req, res) => {
   try {
-    const instructor = await User.findByIdAndUpdate(req.params.id, { isActive: true }, { new: true });
+    const instructor = await User.findByIdAndUpdate(
+      req.params.id,
+      { isActive: true },
+      { new: true }
+    );
 
     // Invia email di conferma
-    sendEmail(instructor.email, 'Account Attivato', 'Il tuo account è stato approvato e attivato. Puoi ora accedere al sistema.');
+    sendEmail(
+      instructor.email,
+      'Account Attivato',
+      'Il tuo account è stato approvato e attivato. Puoi ora accedere al sistema.'
+    );
 
     res.json(instructor);
   } catch (err) {
@@ -139,7 +175,7 @@ exports.approveInstructor = async (req, res) => {
 
 exports.getAllInstructors = async (req, res) => {
   try {
-    const instructors = await User.find({ isActive: true,role:'instructor' });
+    const instructors = await User.find({ isActive: true, role: 'instructor' });
     res.json(instructors);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -148,7 +184,9 @@ exports.getAllInstructors = async (req, res) => {
 
 exports.getInstructorById = async (req, res) => {
   try {
-    const instructor = await User.findById(req.params.id).populate('sanitarios');
+    const instructor = await User.findById(req.params.id).populate(
+      'sanitarios'
+    );
     if (!instructor) {
       return res.status(404).json({ error: 'Instructor not found' });
     }
@@ -168,7 +206,9 @@ exports.assignSanitario = async (req, res) => {
     }
 
     if (instructor.sanitarios.includes(sanitarioId)) {
-      return res.status(400).json({ error: 'Sanitario already assigned to this instructor' });
+      return res
+        .status(400)
+        .json({ error: 'Sanitario already assigned to this instructor' });
     }
 
     instructor.sanitarios.push(sanitarioId);
@@ -182,7 +222,9 @@ exports.assignSanitario = async (req, res) => {
 // Ottiene i sanitari assegnati a un istruttore
 exports.getAssignedSanitarios = async (req, res) => {
   try {
-    const instructor = await User.findById(req.params.id).populate('sanitarios');
+    const instructor = await User.findById(req.params.id).populate(
+      'sanitarios'
+    );
     if (!instructor) {
       return res.status(404).json({ error: 'Instructor not found' });
     }
@@ -222,12 +264,12 @@ exports.getInstructorSanitarios = async (req, res) => {
   }
 };
 
-
 exports.deleteInstructor = async (req, res) => {
   const { id } = req.params;
 
   try {
-    const instructor = await User.findById(id);    if (!instructor || instructor.role !== 'instructor') {
+    const instructor = await User.findById(id);
+    if (!instructor || instructor.role !== 'instructor') {
       return res.status(404).json({ error: 'Instructor not found' });
     }
     if (req.user.role !== 'admin') {
@@ -248,4 +290,3 @@ exports.deleteInstructor = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
-
