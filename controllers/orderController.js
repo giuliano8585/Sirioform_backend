@@ -138,7 +138,7 @@ const getAllOrders = async (req, res) => {
       const orders = await Order.find()
         .populate(
           'userId orderItems.productId',
-          'firstName lastName role name type code isRefreshCourse isForInstructor'
+          'firstName lastName role name type code isRefreshCourse isForInstructor isForTrainer'
         )
         .populate('orderItems');
       console.log('Orders fetched with populate:', orders);
@@ -183,6 +183,7 @@ const getProdottiAcquistati = async (req, res) => {
     );
     const prodottiAcquistati = orders.reduce((acc, order) => {
       order.orderItems.forEach((item) => {
+        console.log('order.orderItems: ', order.orderItems);
         const prodotto = acc.find((prod) =>
           prod._id.equals(item.productId._id)
         );
@@ -191,6 +192,7 @@ const getProdottiAcquistati = async (req, res) => {
           prodotto.totalQuantity += item.totalQuantity;
           prodotto.isRefreshKit;
           prodotto.isForInstructor;
+          prodotto.isForTrainer;
           prodotto.progressiveNumbers = prodotto.progressiveNumbers.concat(
             item.progressiveNumbers
           );
@@ -201,6 +203,7 @@ const getProdottiAcquistati = async (req, res) => {
             quantity: item.quantity,
             isRefreshKit: item.productId.isRefreshKit,
             isForInstructor: item.productId.isForInstructor,
+            isForTrainer: item.productId.isForTrainer,
             totalQuantity: item.totalQuantity || 0,
             progressiveNumbers: item.progressiveNumbers || [],
           });
