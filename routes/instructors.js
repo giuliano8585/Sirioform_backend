@@ -13,6 +13,7 @@ const {
   getInstructorSanitarios,
   updateInstructor,
   deleteInstructor,
+  changeInstructorStatus,
 } = require('../controllers/instructorController');
 const multer = require('multer');
 const path = require('path');
@@ -64,5 +65,7 @@ router.get('/:id/sanitarios', getAssignedSanitarios);
 router.post('/remove-sanitario', removeSanitario);
 router.get('/:instructorId/sanitarios', auth, getInstructorSanitarios);
 router.delete('/:id', auth, isAdmin, deleteInstructor);
+router.patch('/update-status/:id/status',auth, changeInstructorStatus);
+
 
 module.exports = router;
