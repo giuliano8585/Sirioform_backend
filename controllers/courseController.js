@@ -8,6 +8,7 @@ const Discente = require('../models/Discente');
 const generateCertificate = require('../utils/generateCertificate');
 const sendEmail = require('../utils/emailService');
 const path = require('path');
+const CourseType = require('../models/CourseType');
 
 // Funzione per creare un nuovo corso
 const createCourse = async (req, res) => {
@@ -253,7 +254,7 @@ const uploadReportDocument = async (req, res) => {
       return res.status(404).json({ message: 'Course not found' });
     }
 
-    course.reportDocument = file.path; 
+    course.reportDocument = file.path;
     await course.save();
 
     res
@@ -294,11 +295,9 @@ const updateCourseStatus = async (req, res) => {
 
     if (status === 'end') {
       if (!course.reportDocument) {
-        return res
-          .status(400)
-          .json({
-            message: 'Report document is required before ending the course',
-          });
+        return res.status(400).json({
+          message: 'Report document is required before ending the course',
+        });
       }
       // Find all orders that have the course's tipologia in their order items
       const orders = await Order.find({
@@ -836,6 +835,54 @@ const sendCertificate = async (req, res) => {
   }
 };
 
+const courseType = async (req, res) => {
+  const { type } = req.body;
+
+  try {
+    const courseTypes = await CourseType.find({ type: type });
+    if (courseTypes === type) {
+      return res
+        .status(400)
+        .json({ message: 'this course type already exist' });
+    }
+
+    // Create the course
+    const newCourseType = new CourseType({ type: type });
+
+    const createdCourseType = await newCourseType.save();
+
+    res.status(201).json(createdCourseType);
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ message: 'Error', error: error });
+  }
+};
+const getCourseTypes = async (req, res) => {
+  try {
+    const courseTypes = await CourseType.find();
+    if (courseTypes.length === 0) {
+      return res.status(400).json({ message: 'No Course Found' });
+    }
+    res.status(201).json(courseTypes);
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ message: 'Error' });
+  }
+};
+const deleteCourseTypes = async (req, res) => {
+  const id = req.params.id;
+  try {
+    const courseTypes = await CourseType.find();
+    if (courseTypes.length === 0) {
+      return res.status(400).json({ message: 'No Course Found' });
+    }
+    const deletedCourseType = await CourseType.findByIdAndDelete(id);
+    res.status(200).json(deletedCourseType);
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ message: 'Error' });
+  }
+};
 module.exports = {
   createCourse,
   getCoursesByUser,
@@ -852,4 +899,7 @@ module.exports = {
   sendCertificateToDiscente,
   sendCertificate,
   uploadReportDocument,
+  courseType,
+  deleteCourseTypes,
+  getCourseTypes,
 };

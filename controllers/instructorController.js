@@ -290,3 +290,27 @@ exports.deleteInstructor = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+
+exports.changeInstructorStatus = async (req, res) => {
+  const { id } = req.params;
+  console.log('id: ', id);
+  const { isActive } = req.body;
+  console.log('isActive: ', isActive);
+
+  try {
+    const instructor = await User.findById(id);
+    console.log('instructor: ', instructor);
+    if (!instructor || instructor.role !== 'instructor') {
+      return res.status(404).json({ error: 'Instructor not found' });
+    }
+
+    instructor.isActive = isActive;
+    await instructor.save();
+
+    res.status(200).json({ message: 'Instructor status updated successfully', instructor });
+  } catch (err) {
+    console.log('errsd: ', err);
+    res.status(500).json({ error: err.message });
+  }
+};

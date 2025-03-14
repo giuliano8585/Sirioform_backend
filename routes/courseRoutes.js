@@ -15,6 +15,9 @@ const {
   sendCertificateToDiscente,
   sendCertificate,
   uploadReportDocument,
+  courseType,
+  getCourseTypes,
+  deleteCourseTypes,
 } = require('../controllers/courseController');
 const auth = require('../middleware/auth');
 const isAdmin = require('../middleware/isAdmin');
@@ -33,20 +36,30 @@ router.get('/discente-courses/:id', auth, getCoursesByDiscenteId);
 router.get('/user-course/:id', auth, getSingleCourseById);
 
 router.get('/', auth, isAdmin, getAllCourses);
-router.post('/courses/:courseId/upload-report', uploadDocument.single('reportDocument'), uploadReportDocument);
+router.post(
+  '/courses/:courseId/upload-report',
+  uploadDocument.single('reportDocument'),
+  uploadReportDocument
+);
 router.patch('/courses/:courseId/status', auth, updateCourseStatus);
 
 router.patch('/assign-discente', assignDescente);
 
 router.patch('/remove-discente', removeDiscente);
 
-router.patch('/courses/:courseId',auth, updateCourse);
-router.patch('/courses/add-quatity/:courseId',auth, addCourseQuantity);
+router.patch('/courses/:courseId', auth, updateCourse);
+router.patch('/courses/add-quatity/:courseId', auth, addCourseQuantity);
 
 router.delete('/courses/:courseId', deleteCourse);
 
-router.get('/courses/:courseId/certificates/:discenteId', sendCertificateToDiscente);
+router.get(
+  '/courses/:courseId/certificates/:discenteId',
+  sendCertificateToDiscente
+);
 router.post('/courses/:courseId/send-email', sendCertificate);
 
+router.post('/courses/course-type', auth, courseType);
+router.delete('/courses/course-type/:id', auth, deleteCourseTypes);
+router.get('/courses/course-type', getCourseTypes);
 
 module.exports = router;
