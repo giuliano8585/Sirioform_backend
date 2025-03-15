@@ -1,4 +1,5 @@
 const Cart = require('../models/Cart');
+const Course = require('../models/Course');
 const Kit = require('../models/Kit');
 const Order = require('../models/Order');
 
@@ -181,18 +182,16 @@ const getProdottiAcquistati = async (req, res) => {
     const orders = await Order.find({ userId: req.user.id }).populate(
       'orderItems.productId'
     );
+    const courses = await Course.find({ userId: req.user.id }).populate('discente');
+
     const prodottiAcquistati = orders.reduce((acc, order) => {
       order.orderItems.forEach((item) => {
-        console.log('order.orderItems: ', order.orderItems);
         const prodotto = acc.find((prod) =>
           prod._id.equals(item.productId._id)
         );
         if (prodotto) {
           prodotto.quantity += item.quantity;
           prodotto.totalQuantity += item.totalQuantity;
-          prodotto.isRefreshKit;
-          prodotto.isForInstructor;
-          prodotto.isForTrainer;
           prodotto.progressiveNumbers = prodotto.progressiveNumbers.concat(
             item.progressiveNumbers
           );
@@ -206,18 +205,85 @@ const getProdottiAcquistati = async (req, res) => {
             isForTrainer: item.productId.isForTrainer,
             totalQuantity: item.totalQuantity || 0,
             progressiveNumbers: item.progressiveNumbers || [],
+            assignedQuantity: 0,
+            usedQuantity: 0,
           });
         }
       });
       return acc;
     }, []);
+
+    // Calculate assigned and used quantities
+    prodottiAcquistati?.forEach((prodotto) => {
+      courses?.forEach((course) => {
+        course.discente.forEach((discente) => {
+          discente.patentNumber.forEach((patentNumber) => {
+            if (prodotto.progressiveNumbers.includes(patentNumber)) {
+              prodotto.usedQuantity += 1;
+            }
+          });
+        });
+        console.log('course items: ', course);
+
+        course?.orderItems?.forEach((item) => {
+          if (item.productId.equals(prodotto._id)) {
+            prodotto.assignedQuantity += item.quantity;
+          }
+        });
+      });
+    });
+
     res.status(200).json(prodottiAcquistati);
   } catch (err) {
+    console.log('err: ', err);
     res
       .status(500)
       .json({ message: 'Errore durante il recupero dei prodotti acquistati' });
   }
 };
+
+// const getProdottiAcquistati = async (req, res) => {
+//   try {
+//     const orders = await Order.find({ userId: req.user.id }).populate(
+//       'orderItems.productId'
+//     );
+//     const prodottiAcquistati = orders.reduce((acc, order) => {
+//       order.orderItems.forEach((item) => {
+//         console.log('order.orderItems: ', order.orderItems);
+//         const prodotto = acc.find((prod) =>
+//           prod._id.equals(item.productId._id)
+//         );
+//         if (prodotto) {
+//           prodotto.quantity += item.quantity;
+//           prodotto.totalQuantity += item.totalQuantity;
+//           prodotto.isRefreshKit;
+//           prodotto.isForInstructor;
+//           prodotto.isForTrainer;
+//           prodotto.progressiveNumbers = prodotto.progressiveNumbers.concat(
+//             item.progressiveNumbers
+//           );
+//         } else {
+//           acc.push({
+//             _id: item.productId._id,
+//             title: item.productId.type,
+//             quantity: item.quantity,
+//             isRefreshKit: item.productId.isRefreshKit,
+//             isForInstructor: item.productId.isForInstructor,
+//             isForTrainer: item.productId.isForTrainer,
+//             totalQuantity: item.totalQuantity || 0,
+//             progressiveNumbers: item.progressiveNumbers || [],
+//           });
+//         }
+//       });
+//       return acc;
+//     }, []);
+//     res.status(200).json(prodottiAcquistati);
+//   } catch (err) {
+//     res
+//       .status(500)
+//       .json({ message: 'Errore durante il recupero dei prodotti acquistati' });
+//   }
+// };
 
 module.exports = {
   createOrder,
