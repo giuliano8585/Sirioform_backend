@@ -36,7 +36,7 @@ app.use('/api/corsi', require('./routes/courseRoutes'));
 app.use('/api/notifications', require('./routes/notificationRoutes'));
 
 app.get('*', (req, res) => {
-  res.sendFile(path.resolve(_dirname, '../frontend/build', 'index.html'));
+  res.sendFile(path.resolve(_dirname, '../frontend/dist', 'index.html'));
 });
 
 const PORT = process.env.PORT || 5000;
