@@ -11,7 +11,7 @@ connectDB();
 const app = express();
 
 const _dirname = path.dirname('');
-const buildpath = path.join(_dirname, '../frontend/build');
+const buildpath = path.join(_dirname, '../frontend/dist');
 app.use(express.static(buildpath));
 app.use('/uploads', express.static('uploads'));
 app.use(cors());
