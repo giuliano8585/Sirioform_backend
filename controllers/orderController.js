@@ -223,8 +223,6 @@ const getProdottiAcquistati = async (req, res) => {
             }
           });
         });
-        console.log('course items: ', course);
-
         course?.orderItems?.forEach((item) => {
           if (item.productId.equals(prodotto._id)) {
             prodotto.assignedQuantity += item.quantity;
